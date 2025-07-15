@@ -42,7 +42,9 @@ export const createHapticFeedback = (options: HapticFeedbackOptions): HapticFeed
         hapticFunction();
       } catch (error) {
         // Silently fail if haptics don't work
-        console.warn('Haptic feedback failed:', error);
+        if (__DEV__) {
+          console.warn('Haptic feedback failed:', error);
+        }
       }
     }
     // In non-Expo environments, we could add other haptic implementations here

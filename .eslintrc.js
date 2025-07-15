@@ -12,6 +12,10 @@ module.exports = {
   env: {
     es6: true,
     node: true,
+    'react-native/react-native': true,
+  },
+  globals: {
+    __DEV__: 'readonly',
   },
   rules: {
     'no-console': 'warn',

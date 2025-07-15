@@ -120,7 +120,10 @@ class TimelineErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryS
     // Log error to analytics/crash reporting
     this.props.onError?.(error, errorInfo);
     
-    console.error('Timeline Error Boundary caught an error:', error, errorInfo);
+    // Only log in development mode
+    if (__DEV__) {
+      console.error('Timeline Error Boundary caught an error:', error, errorInfo);
+    }
   }
 
   resetError = () => {
