@@ -1,4 +1,4 @@
-// Main timeline component - will be created next
+// Main component
 export { default as MultiResourceTimeline } from './MultiResourceTimeline';
 
 // Types
@@ -11,17 +11,23 @@ export type {
 
 export { StatusColors } from './types';
 
-// Theme
-export { darkTheme, getTheme, lightTheme } from './theme';
+// Theme utilities
+export { getTheme, lightTheme, darkTheme } from './theme';
+
+// Constants
+export * from './constants';
 
 // Styles
 export { createEventStyles } from './styles/eventStyles';
 export { createTimelineStyles } from './styles/timelineStyles';
 
-// Hooks
-export { HapticPattern, useHapticFeedback } from './hooks/useHapticFeedback';
+// Hooks (for advanced usage)
+export { useTimelineCalculations } from './hooks/useTimelineCalculations';
+export { useTimelineSelection } from './hooks/useTimelineSelection';
+export { useHapticFeedback, HapticPattern } from './hooks/useHapticFeedback';
+export { useWorkingHours } from './hooks/useWorkingHours';
 
-// Utils
+// Utility functions
 export {
     getResourceWorkingHours, minutesToSlotIndex,
     parseTimeRange, parseWorkingHours, timeToMinutes

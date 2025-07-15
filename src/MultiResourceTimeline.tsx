@@ -1,18 +1,50 @@
-import React, { forwardRef } from 'react';
-import { Text, View } from 'react-native';
-import { MultiResourceTimelineProps, MultiResourceTimelineRef } from './types';
+import React, { forwardRef, useEffect, useImperativeHandle, useMemo, useState } from 'react';
+import { Dimensions, ScrollView, View } from 'react-native';
+import { CalendarUtils } from 'react-native-calendars';
+import {
+  GestureDetector,
+  GestureHandlerRootView,
+  ScrollView as GestureScrollView,
+  PinchGestureHandler,
+} from 'react-native-gesture-handler';
+import Animated, {
+  Easing,
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
+} from 'react-native-reanimated';
 
-/**
- * Multi-Resource Timeline Component
- * 
- * A powerful, customizable timeline component for React Native that supports:
- * - Multiple resources (columns)
- * - Gesture-based interactions
- * - Zoom capabilities
- * - Working hours visualization
- * - Haptic feedback
- * - Theme customization
- */
+// Import our enhanced components and hooks
+import {
+  HOUR_WIDTH,
+  PERFORMANCE
+} from './constants';
+import { createTimelineStyles } from './styles/timelineStyles';
+import { getTheme } from './theme';
+import {
+  MultiResourceTimelineProps,
+  MultiResourceTimelineRef,
+  TimelineTheme } from './types';
+
+import { useHapticFeedback } from './hooks/useHapticFeedback';
+import { useKeyboardNavigation } from './hooks/useKeyboardNavigation';
+import { useScrollSync } from './hooks/useScrollSync';
+import { useTimelineCalculations } from './hooks/useTimelineCalculations';
+import { useTimelineGestures } from './hooks/useTimelineGestures';
+import { useTimelineSelection } from './hooks/useTimelineSelection';
+import { useTimelineZoom } from './hooks/useTimelineZoom';
+import { useVirtualScroll } from './hooks/useVirtualScroll';
+import { useWorkingHours } from './hooks/useWorkingHours';
+
+import TimelineErrorBoundary from './components/ErrorBoundary';
+import NowIndicator from './components/NowIndicator';
+import ResourceColumn from './components/ResourceColumn';
+import ResourceHeader from './components/ResourceHeader';
+import SkeletonLoader from './components/SkeletonLoader';
+import TimeColumn from './components/TimeColumn';
+
+const { width } = Dimensions.get('window');
+
 const MultiResourceTimeline = forwardRef<MultiResourceTimelineRef, MultiResourceTimelineProps>(({
   events,
   resources,
@@ -25,7 +57,7 @@ const MultiResourceTimeline = forwardRef<MultiResourceTimelineRef, MultiResource
   format24h = true,
   timeSlotInterval = 60,
   resourcesPerPage = 2,
-  theme = 'light',
+  theme: themeProp = 'light',
   enableHaptics = true,
   showWorkingHoursBackground = false,
   workingHoursStyle,
@@ -35,16 +67,383 @@ const MultiResourceTimeline = forwardRef<MultiResourceTimelineRef, MultiResource
   onError,
 }, ref) => {
   
-  // This is a placeholder implementation
-  // The full implementation will be added in the next steps
-  
+  // State management
+  const [currentPage, setCurrentPage] = useState(0);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isVirtualScrollEnabled, setIsVirtualScrollEnabled] = useState(events.length > 100);
+
+  // Theme
+  const theme: TimelineTheme = useMemo(() => getTheme(themeProp), [themeProp]);
+  const styles = useMemo(() => createTimelineStyles(theme), [theme]);
+
+  // Enhanced hooks
+  const { timeSlots, slotHeight, formatTimeSlot, getCurrentTimePosition } = useTimelineCalculations({
+    startHour,
+    endHour,
+    timeSlotInterval,
+    hourHeight,
+    date,
+  });
+
+  const {
+    selectedTimeSlot,
+    isDragging,
+    dragSelection,
+    currentDragSelection,
+    clearSelection,
+    handleTimeSlotPress,
+    startDragSelection,
+    updateDragSelection,
+    completeDragSelection,
+  } = useTimelineSelection();
+
+  // Working hours hook
+  const { getWorkingHoursForResource, hasWorkingHours } = useWorkingHours(
+    resources,
+    date,
+    startHour,
+    endHour,
+    timeSlotInterval
+  );
+
+  // Calculate dynamic column width based on actual displayed resources
+  const availableWidth = width - HOUR_WIDTH - 40;
+  const actualResourceCount = resources.length;
+  const effectiveResourcesPerPage = Math.min(actualResourceCount, resourcesPerPage);
+  const dynamicColumnWidth = effectiveResourcesPerPage > 0 ? availableWidth / effectiveResourcesPerPage : availableWidth;
+
+  const {
+    currentHourHeight,
+    currentEventMinHeight,
+    currentColumnWidth,
+    handleVerticalZoomChange,
+    handleHorizontalZoomChange,
+    handleLiveVerticalZoomChange,
+    handleLiveHorizontalZoomChange,
+    resetZoom,
+  } = useTimelineZoom(hourHeight, eventMinHeight, dynamicColumnWidth * 1.1);
+
+  // Haptic feedback
+  const {
+    lightImpact,
+    mediumImpact,
+    selectionFeedback,
+    successFeedback,
+    errorFeedback,
+  } = useHapticFeedback({ enabled: enableHaptics });
+
+  // Enhanced gesture handling with haptics
+  const handleDragStart = (resourceId: string, slotIndex: number) => {
+    lightImpact();
+    startDragSelection(resourceId, slotIndex);
+  };
+
+  const handleDragUpdate = (endSlot: number) => {
+    selectionFeedback();
+    updateDragSelection(endSlot);
+  };
+
+  const handleDragComplete = () => {
+    mediumImpact();
+    completeDragSelection((resourceId, startSlot, endSlot) => {
+      successFeedback();
+      onTimeSlotSelect?.(resourceId, startSlot, endSlot);
+    });
+  };
+
+  const {
+    pinchHandler,
+    scrollGesture,
+    createDragGesture,
+    isZooming,
+  } = useTimelineGestures({
+    slotHeight,
+    timeSlots,
+    resources,
+    currentDragSelection,
+    startDragSelection: handleDragStart,
+    updateDragSelection: handleDragUpdate,
+    completeDragSelection: handleDragComplete,
+    handleLiveVerticalZoomChange,
+    handleLiveHorizontalZoomChange,
+    handleVerticalZoomChange,
+    handleHorizontalZoomChange,
+  });
+
+  // Keyboard navigation
+  const {
+    focusedResource,
+    focusedTimeSlot,
+    handleKeyPress,
+    getFocusProps,
+    clearSelection: clearKeyboardSelection,
+  } = useKeyboardNavigation({
+    resources,
+    timeSlots,
+    onTimeSlotSelect: (resourceId, startSlot, endSlot) => {
+      successFeedback();
+      onTimeSlotSelect?.(resourceId, startSlot, endSlot);
+    },
+    onEventPress,
+  });
+
+  // Virtual scrolling for large datasets
+  const containerHeight = (endHour - startHour) * currentHourHeight;
+  const { visibleItems: visibleTimeSlots, handleScroll: handleVirtualScroll } = useVirtualScroll({
+    itemCount: timeSlots.length,
+    itemHeight: slotHeight,
+    containerHeight: containerHeight,
+    overscan: 5,
+  });
+
+  // Calculations
+  const totalPages = Math.ceil(resources.length / effectiveResourcesPerPage);
+  const totalContentWidth = currentColumnWidth * resources.length;
+  const scrollViewWidth = width - HOUR_WIDTH - 40;
+
+  const {
+    headerScrollRef,
+    contentScrollRef,
+    handleHeaderScroll,
+    handleContentScroll,
+    scrollIndicatorOpacity,
+    scrollToResource: scrollToResourcePosition,
+  } = useScrollSync({
+    currentColumnWidth,
+    resourcesPerPage: effectiveResourcesPerPage,
+    totalPages,
+    currentPage,
+    setCurrentPage,
+  });
+
+  // Now indicator
+  const nowIndicatorPosition = getCurrentTimePosition();
+  const currentTimeString = useMemo(() => {
+    if (!showNowIndicator || nowIndicatorPosition === null) return '';
+    
+    const currentTime = new Date();
+    return format24h 
+      ? currentTime.toLocaleTimeString('en-US', { 
+          hour12: false, 
+          hour: '2-digit', 
+          minute: '2-digit' 
+        })
+      : currentTime.toLocaleTimeString('en-US', { 
+          hour12: true, 
+          hour: '2-digit', 
+          minute: '2-digit' 
+        });
+  }, [showNowIndicator, nowIndicatorPosition, format24h]);
+
+  // Scroll indicator style
+  const scrollIndicatorStyle = useAnimatedStyle(() => ({
+    opacity: scrollIndicatorOpacity.value,
+  }));
+
+  // Loading progress
+  const loadingProgress = useSharedValue(0);
+
+  // Filter events for date
+  const filteredEvents = useMemo(() => 
+    events.filter(event => 
+      CalendarUtils.getCalendarDateString(new Date(event.start)) === date
+    ), [events, date]
+  );
+
+  // Imperative methods
+  useImperativeHandle(ref, () => ({
+    clearSelection: () => {
+      clearSelection();
+      clearKeyboardSelection();
+    },
+    scrollToTime: (hour: number) => {
+      const position = (hour - startHour) * currentHourHeight;
+      // Implementation would require vertical scroll ref
+    },
+    scrollToResource: (resourceId: string) => {
+      const resourceIndex = resources.findIndex(r => r.id === resourceId);
+      if (resourceIndex !== -1) {
+        scrollToResourcePosition(resourceIndex);
+        lightImpact();
+      }
+    },
+  }), [clearSelection, clearKeyboardSelection, startHour, currentHourHeight, resources, scrollToResourcePosition, lightImpact]);
+
+  // Effects
+  useEffect(() => {
+    loadingProgress.value = withTiming(1, {
+      duration: 800,
+      easing: Easing.out(Easing.quad),
+    });
+    
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+      onLoadingChange?.(false);
+      if (enableHaptics) {
+        lightImpact();
+      }
+    }, 600);
+
+    return () => clearTimeout(timer);
+  }, [loadingProgress, onLoadingChange, enableHaptics, lightImpact]);
+
+  // Update now indicator periodically
+  useEffect(() => {
+    if (!showNowIndicator) return;
+
+    const interval = setInterval(() => {
+      getCurrentTimePosition();
+    }, 60000);
+
+    return () => clearInterval(interval);
+  }, [showNowIndicator, getCurrentTimePosition]);
+
+  // Reset current page when resources change (important for filtering)
+  useEffect(() => {
+    setCurrentPage(0);
+  }, [resources.length]);
+
+  // Error handling
+  useEffect(() => {
+    try {
+      if (!resources || resources.length === 0) {
+        throw new Error('No resources provided');
+      }
+      if (startHour >= endHour) {
+        throw new Error('Start hour must be less than end hour');
+      }
+    } catch (error) {
+      errorFeedback();
+      onError?.(error as Error);
+    }
+  }, [resources, startHour, endHour, onError, errorFeedback]);
+
+  // Show loading skeleton
+  if (isLoading) {
+    return (
+      <SkeletonLoader
+        theme={theme}
+        resourceCount={Math.min(resources.length, 4)}
+        timeSlotCount={Math.min(timeSlots.length, 20)}
+        eventCount={Math.min(filteredEvents.length, 8)}
+      />
+    );
+  }
+
   return (
-    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-      <Text>MultiResourceTimeline Component</Text>
-      <Text>Resources: {resources.length}</Text>
-      <Text>Events: {events.length}</Text>
-      <Text>Date: {date}</Text>
-    </View>
+    <TimelineErrorBoundary theme={theme} onError={onError}>
+      <GestureHandlerRootView style={styles.container}>
+        {/* Header Row */}
+        <View style={styles.headerRow}>
+          <View style={styles.timeHeaderSpace} />
+          <ScrollView 
+            ref={headerScrollRef}
+            horizontal 
+            showsHorizontalScrollIndicator={false}
+            onScroll={handleHeaderScroll}
+            scrollEventThrottle={PERFORMANCE.scrollThrottle}
+            bounces={false}
+            style={{ width: scrollViewWidth }}
+            contentContainerStyle={{ width: totalContentWidth }}
+          >
+            <View style={{ flexDirection: 'row', width: totalContentWidth }}>
+              {resources.map((resource, index) => (
+                <ResourceHeader
+                  key={resource.id}
+                  resource={resource}
+                  index={index}
+                  width={currentColumnWidth}
+                  theme={theme}
+                />
+              ))}
+            </View>
+          </ScrollView>
+          
+          {/* Horizontal scroll indicator */}
+          {totalContentWidth > scrollViewWidth && (
+            <Animated.View style={[styles.scrollIndicator, scrollIndicatorStyle]}>
+              <View style={styles.scrollThumb} />
+            </Animated.View>
+          )}
+        </View>
+
+        {/* Timeline Content with Pinch Gesture */}
+        <PinchGestureHandler onGestureEvent={pinchHandler} shouldCancelWhenOutside={false}>
+          <Animated.View style={styles.scrollContainer}>
+            <GestureDetector gesture={scrollGesture}>
+              <GestureScrollView 
+                style={{ flex: 1 }}
+                onScroll={isVirtualScrollEnabled ? handleVirtualScroll : undefined}
+                scrollEventThrottle={PERFORMANCE.scrollThrottle}
+              >
+                <View style={styles.timelineContainer}>
+                  {/* Time column */}
+                  <TimeColumn
+                    timeSlots={isVirtualScrollEnabled ? visibleTimeSlots.map(v => timeSlots[v.index]) : timeSlots}
+                    slotHeight={slotHeight}
+                    formatTimeSlot={formatTimeSlot}
+                    timeSlotInterval={timeSlotInterval}
+                    format24h={format24h}
+                    theme={theme}
+                  />
+                  
+                  {/* Scrollable timeline columns */}
+                  <GestureScrollView 
+                    ref={contentScrollRef}
+                    horizontal 
+                    showsHorizontalScrollIndicator={false}
+                    onScroll={handleContentScroll}
+                    scrollEventThrottle={PERFORMANCE.scrollThrottle}
+                    bounces={false}
+                    style={{ width: scrollViewWidth }}
+                    contentContainerStyle={{ width: totalContentWidth }}
+                  >
+                    <View style={{ flexDirection: 'row', width: totalContentWidth }}>
+                      {resources.map((resource, index) => (
+                        <ResourceColumn
+                          key={resource.id}
+                          resource={resource}
+                          resourceIndex={index}
+                          events={filteredEvents}
+                          timeSlots={isVirtualScrollEnabled ? visibleTimeSlots.map(v => timeSlots[v.index]) : timeSlots}
+                          slotHeight={slotHeight}
+                          width={currentColumnWidth}
+                          date={date}
+                          startHour={startHour}
+                          hourHeight={currentHourHeight}
+                          eventMinHeight={currentEventMinHeight}
+                          selectedTimeSlot={selectedTimeSlot}
+                          dragSelection={dragSelection}
+                          dragGesture={createDragGesture(index)}
+                          onEventPress={(event) => {
+                            lightImpact();
+                            onEventPress?.(event);
+                          }}
+                          theme={theme}
+                          showWorkingHoursBackground={showWorkingHoursBackground && hasWorkingHours}
+                          workingHoursStyle={workingHoursStyle}
+                          workingSlots={getWorkingHoursForResource(resource.id)}
+                        />
+                      ))}
+                    </View>
+                  </GestureScrollView>
+                  
+                  {/* Now indicator */}
+                  {nowIndicatorPosition !== null && currentTimeString && (
+                    <NowIndicator
+                      position={nowIndicatorPosition}
+                      timeString={currentTimeString}
+                      scrollViewWidth={scrollViewWidth}
+                      theme={theme}
+                    />
+                  )}
+                </View>
+              </GestureScrollView>
+            </GestureDetector>
+          </Animated.View>
+        </PinchGestureHandler>
+      </GestureHandlerRootView>
+    </TimelineErrorBoundary>
   );
 });
 
