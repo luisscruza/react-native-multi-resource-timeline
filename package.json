@@ -33,16 +33,16 @@
     "expo",
     "typescript"
   ],
-  "author": "Your Name <your.email@example.com>",
+  "author": "Luis Cruz <luisscruza@gmail.com>",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/yourusername/react-native-multi-resource-timeline.git"
+    "url": "git+https://github.com/luisscruza/react-native-multi-resource-timeline.git"
   },
   "bugs": {
-    "url": "https://github.com/yourusername/react-native-multi-resource-timeline/issues"
+    "url": "https://github.com/luisscruza/react-native-multi-resource-timeline/issues"
   },
-  "homepage": "https://github.com/yourusername/react-native-multi-resource-timeline#readme",
+  "homepage": "https://github.com/luisscruza/react-native-multi-resource-timeline#readme",
   "peerDependencies": {
     "react": ">=16.8.0",
     "react-native": ">=0.60.0",

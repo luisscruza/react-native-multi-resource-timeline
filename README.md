@@ -4,7 +4,7 @@
 
 # React Native Multi-Resource Timeline
 
-A customizableulti-resource timeline component for React Native based on React Native Calendars by Wix.
+A customizable multi-resource timeline component for React Native based on React Native Calendars by Wix.
 
 ## Features
 
