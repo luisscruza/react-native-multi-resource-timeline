@@ -95,7 +95,9 @@ export const parseWorkingHours = (
         });
       }
     } catch (error) {
-      console.warn(`Failed to parse working hours range: ${range}`, error);
+      if (__DEV__) {
+        console.warn(`Failed to parse working hours range: ${range}`, error);
+      }
     }
   });
 
