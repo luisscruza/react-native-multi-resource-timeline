@@ -12,13 +12,12 @@ module.exports = {
   env: {
     es6: true,
     node: true,
-    'react-native/react-native': true,
   },
   globals: {
     __DEV__: 'readonly',
   },
   rules: {
-    'no-console': 'warn',
+    'no-console': ['warn', { allow: ['warn', 'error'] }],
     'prefer-const': 'error',
     'no-var': 'error',
     'no-unused-vars': 'off', // Turn off for TypeScript
