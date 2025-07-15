@@ -1,0 +1,33 @@
+# Source files (we only publish compiled lib/)
+src/
+
+# Development files
+.eslintrc.js
+.prettierrc
+jest.config.js
+tsconfig.json
+babel.config.js
+metro.config.js
+
+# Example and docs
+example/
+docs/
+
+# Development dependencies
+node_modules/
+*.log
+
+# IDE and OS files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Testing
+coverage/
+__tests__/
+*.test.ts
+*.test.tsx
+
+# Environment
+.env*

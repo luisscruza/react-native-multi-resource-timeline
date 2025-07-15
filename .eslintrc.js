@@ -1,0 +1,22 @@
+module.exports = {
+  root: true,
+  extends: ['eslint:recommended'],
+  parser: '@typescript-eslint/parser',
+  parserOptions: {
+    ecmaFeatures: {
+      jsx: true,
+    },
+    ecmaVersion: 2018,
+    sourceType: 'module',
+  },
+  env: {
+    es6: true,
+    node: true,
+  },
+  rules: {
+    'no-console': 'warn',
+    'prefer-const': 'error',
+    'no-var': 'error',
+    'no-unused-vars': 'off', // Turn off for TypeScript
+  },
+};
