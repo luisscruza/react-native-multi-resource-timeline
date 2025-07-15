@@ -3,38 +3,28 @@ export { default as MultiResourceTimeline } from './MultiResourceTimeline';
 
 // Types
 export type {
-  MultiResourceEvent,
-  Resource,
-  TimeSlot,
-  EventPosition,
-  DragSelection,
-  MultiResourceTimelineRef,
-  MultiResourceTimelineProps,
-  TimelineTheme,
-  WorkingHours,
-  WorkingHoursStyle,
-  EventStatus
+    DragSelection, EventPosition, EventStatus, MultiResourceEvent, MultiResourceTimelineProps, MultiResourceTimelineRef, Resource,
+    TimeSlot, TimelineTheme,
+    WorkingHours,
+    WorkingHoursStyle
 } from './types';
 
 export { StatusColors } from './types';
 
 // Theme
-export { lightTheme, darkTheme, getTheme } from './theme';
+export { darkTheme, getTheme, lightTheme } from './theme';
 
 // Styles
-export { createTimelineStyles } from './styles/timelineStyles';
 export { createEventStyles } from './styles/eventStyles';
+export { createTimelineStyles } from './styles/timelineStyles';
 
 // Hooks
-export { useHapticFeedback, HapticPattern } from './hooks/useHapticFeedback';
+export { HapticPattern, useHapticFeedback } from './hooks/useHapticFeedback';
 
 // Utils
 export {
-  parseWorkingHours,
-  getResourceWorkingHours,
-  timeToMinutes,
-  minutesToSlotIndex,
-  parseTimeRange
+    getResourceWorkingHours, minutesToSlotIndex,
+    parseTimeRange, parseWorkingHours, timeToMinutes
 } from './utils/workingHoursParser';
 
 export { createHapticFeedback } from './utils/haptics';
@@ -42,11 +32,8 @@ export type { HapticFeedback, HapticFeedbackOptions } from './utils/haptics';
 
 // Constants
 export {
-  HOUR_WIDTH,
-  MIN_TOUCH_TARGET,
-  ZOOM_LIMITS,
-  ANIMATION_DURATIONS,
-  EVENT_CONSTRAINTS,
-  ACCESSIBILITY,
-  PERFORMANCE
+    ACCESSIBILITY, ANIMATION_DURATIONS,
+    EVENT_CONSTRAINTS, HOUR_WIDTH,
+    MIN_TOUCH_TARGET, PERFORMANCE, ZOOM_LIMITS
 } from './constants';
+

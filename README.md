@@ -1,6 +1,10 @@
+> [!NOTE]  
+> This package is currently in progress and the API might change. Please don't use this.
+
+
 # React Native Multi-Resource Timeline
 
-A powerful, customizable multi-resource timeline component for React Native with advanced gesture support, zoom capabilities, and working hours visualization.
+A customizableulti-resource timeline component for React Native based on React Native Calendars by Wix.
 
 ## Features
 
@@ -10,8 +14,6 @@ A powerful, customizable multi-resource timeline component for React Native with
 - ⏰ **Working hours support** - Visual distinction between working and non-working hours
 - 📱 **Haptic feedback** - Enhanced user experience with optional haptic feedback
 - 🔧 **TypeScript support** - Full TypeScript definitions included
-- 📐 **Responsive design** - Adapts to different screen sizes and orientations
-- ♿ **Accessibility** - Built with accessibility guidelines in mind
 - 🚀 **Performance optimized** - Virtual scrolling for large datasets
 
 ## Installation

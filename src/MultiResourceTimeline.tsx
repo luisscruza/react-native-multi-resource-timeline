@@ -1,5 +1,5 @@
 import React, { forwardRef } from 'react';
-import { View, Text } from 'react-native';
+import { Text, View } from 'react-native';
 import { MultiResourceTimelineProps, MultiResourceTimelineRef } from './types';
 
 /**

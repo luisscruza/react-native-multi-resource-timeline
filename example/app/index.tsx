@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { StyleSheet, View, StatusBar, SafeAreaView } from 'react-native';
+import { useState } from 'react';
+import { SafeAreaView, StatusBar, StyleSheet, View } from 'react-native';
 import { MultiResourceTimeline } from 'react-native-multi-resource-timeline';
 
 // Example data
