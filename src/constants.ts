@@ -47,4 +47,11 @@ export const PERFORMANCE = {
   gestureThrottle: 16,
   animationThrottle: 32,
   virtualizationBuffer: 5, // slots to render outside viewport
+  // Optimized thresholds for multi-column scenarios
+  virtualScrollThresholds: {
+    // Lower thresholds for better performance with multiple columns
+    events: 50, // Was 100
+    eventsWithMultipleColumns: 20, // When > 4 columns
+    columnsThreshold: 4,
+  },
 } as const;

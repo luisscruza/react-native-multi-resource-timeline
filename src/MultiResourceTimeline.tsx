@@ -70,7 +70,12 @@ const MultiResourceTimeline = forwardRef<MultiResourceTimelineRef, MultiResource
   // State management
   const [currentPage, setCurrentPage] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
-  const [isVirtualScrollEnabled, setIsVirtualScrollEnabled] = useState(events.length > 100);
+  const [isVirtualScrollEnabled, setIsVirtualScrollEnabled] = useState(
+    // Use optimized thresholds for better performance with multiple columns
+    events.length > PERFORMANCE.virtualScrollThresholds.events || 
+    (events.length > PERFORMANCE.virtualScrollThresholds.eventsWithMultipleColumns && 
+     resources.length > PERFORMANCE.virtualScrollThresholds.columnsThreshold)
+  );
 
   // Theme
   const theme: TimelineTheme = useMemo(() => getTheme(themeProp), [themeProp]);
