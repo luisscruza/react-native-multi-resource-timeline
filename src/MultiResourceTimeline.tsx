@@ -274,25 +274,32 @@ const MultiResourceTimeline = forwardRef<MultiResourceTimelineRef, MultiResource
     },
   }), [clearSelection, clearKeyboardSelection, startHour, currentHourHeight, resources, scrollToResourcePosition, lightImpact]);
 
-  // Effects
+  // Effects with proper cleanup to prevent memory leaks
   useEffect(() => {
+    let mounted = true;
+    
     loadingProgress.value = withTiming(1, {
       duration: 800,
       easing: Easing.out(Easing.quad),
     });
     
     const timer = setTimeout(() => {
-      setIsLoading(false);
-      onLoadingChange?.(false);
-      if (enableHaptics) {
-        lightImpact();
+      if (mounted) {
+        setIsLoading(false);
+        onLoadingChange?.(false);
+        if (enableHaptics) {
+          lightImpact();
+        }
       }
     }, 600);
 
-    return () => clearTimeout(timer);
+    return () => {
+      mounted = false;
+      clearTimeout(timer);
+    };
   }, [loadingProgress, onLoadingChange, enableHaptics, lightImpact]);
 
-  // Update now indicator periodically
+  // Update now indicator periodically with cleanup
   useEffect(() => {
     if (!showNowIndicator) return;
 
@@ -303,9 +310,13 @@ const MultiResourceTimeline = forwardRef<MultiResourceTimelineRef, MultiResource
     return () => clearInterval(interval);
   }, [showNowIndicator, getCurrentTimePosition]);
 
-  // Reset current page when resources change (important for filtering)
+  // Reset current page when resources change with debouncing to prevent excessive updates
   useEffect(() => {
-    setCurrentPage(0);
+    const timer = setTimeout(() => {
+      setCurrentPage(0);
+    }, 100);
+
+    return () => clearTimeout(timer);
   }, [resources.length]);
 
   // Error handling

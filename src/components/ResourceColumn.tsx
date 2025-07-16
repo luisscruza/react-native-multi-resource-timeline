@@ -74,12 +74,16 @@ const ResourceColumnComponent: React.FC<ResourceColumnProps> = ({
     resourceSelected: false,
   });
 
-  // Update shared values when props change
+  // Update shared values when props change with cleanup
   React.useEffect(() => {
-    baseOpacity.value = withTiming(1, {
-      duration: 300,
-      easing: Easing.out(Easing.quad),
-    });
+    const timer = setTimeout(() => {
+      baseOpacity.value = withTiming(1, {
+        duration: 300,
+        easing: Easing.out(Easing.quad),
+      });
+    }, 50);
+
+    return () => clearTimeout(timer);
   }, [baseOpacity]);
 
   React.useEffect(() => {
@@ -90,12 +94,17 @@ const ResourceColumnComponent: React.FC<ResourceColumnProps> = ({
     const dragStartSlot = isDragForThisResource ? dragSelection.startSlot : -1;
     const dragEndSlot = isDragForThisResource ? dragSelection.endSlot : -1;
     
-    selectionState.value = {
-      selectedSlot,
-      dragStartSlot,
-      dragEndSlot,
-      resourceSelected: isResourceSelected,
-    };
+    // Batch the update to prevent excessive animations
+    const timer = setTimeout(() => {
+      selectionState.value = {
+        selectedSlot,
+        dragStartSlot,
+        dragEndSlot,
+        resourceSelected: isResourceSelected,
+      };
+    }, 16); // One frame delay to batch updates
+
+    return () => clearTimeout(timer);
   }, [selectedTimeSlot, dragSelection, resource.id, selectionState]);
 
   // Create a single animated style function that we'll use for each slot

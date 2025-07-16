@@ -1,6 +1,9 @@
 /**
  * Performance optimization tests
+ * @jest-environment node
  */
+
+/* eslint-env jest */
 
 import { PERFORMANCE } from '../constants';
 
@@ -51,6 +54,7 @@ describe('Performance Optimizations', () => {
       expect(PERFORMANCE.scrollThrottle).toBe(16);
       expect(PERFORMANCE.gestureThrottle).toBe(16);
       expect(PERFORMANCE.animationThrottle).toBe(32);
+      expect(PERFORMANCE.zoomThrottle).toBe(32);
     });
   });
 });

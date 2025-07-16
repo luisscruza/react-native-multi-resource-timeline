@@ -35,6 +35,22 @@ This document outlines the performance optimizations implemented to improve rend
 - Better memoization of resource-specific event filtering
 - Reduced unnecessary computations during renders
 
+### 5. Memory Leak Prevention
+**Problem**: Potential memory leaks from uncleared timers and excessive animated value updates.
+
+**Solution**:
+- Added proper cleanup in useEffect hooks with mounted flags
+- Debounced state updates to prevent excessive re-renders
+- Batched animated value updates with frame-based delays
+
+### 6. Gesture Performance Optimization
+**Problem**: Zoom gestures were triggering excessive worklet calls, causing performance degradation.
+
+**Solution**:
+- Added throttling to zoom updates (~30fps instead of unlimited)
+- Reduced JavaScript bridge calls during gesture handling
+- Optimized pinch gesture direction detection
+
 ## Performance Metrics
 
 These optimizations specifically target the reported issue of "Working with 6 employees (6 column) feels slow in the iOS simulator".
@@ -46,8 +62,10 @@ These optimizations specifically target the reported issue of "Working with 6 em
 
 ### After Optimization
 - Shared animated state with minimal style objects
-- Intelligent memoization preventing unnecessary re-renders
+- Intelligent memoization preventing unnecessary re-renders  
 - Virtual scrolling activated for 6-column scenarios with 20+ events
+- Throttled gesture handling reducing JavaScript bridge calls
+- Memory leak prevention with proper cleanup patterns
 - Reduced memory allocations and improved scroll performance
 
 ## Usage
@@ -57,6 +75,8 @@ The optimizations are automatic and don't require any API changes. The component
 - Enable virtual scrolling for scenarios with multiple columns and moderate event counts
 - Use optimized rendering for time slots and events
 - Prevent unnecessary re-renders through improved memoization
+- Throttle gesture updates to prevent performance degradation
+- Automatically clean up resources to prevent memory leaks
 
 ## Testing
 

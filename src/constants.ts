@@ -46,6 +46,7 @@ export const PERFORMANCE = {
   scrollThrottle: 16, // ~60fps
   gestureThrottle: 16,
   animationThrottle: 32,
+  zoomThrottle: 32, // ~30fps for zoom updates to prevent excessive worklet calls
   virtualizationBuffer: 5, // slots to render outside viewport
   // Optimized thresholds for multi-column scenarios
   virtualScrollThresholds: {
