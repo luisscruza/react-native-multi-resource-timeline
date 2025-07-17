@@ -1,5 +1,5 @@
 import React, { memo } from 'react';
-import { Text, View } from 'react-native';
+import { Image, Text, View } from 'react-native';
 import { createTimelineStyles } from '../styles/timelineStyles';
 import { Resource, TimelineTheme } from '../types';
 
@@ -48,9 +48,11 @@ const ResourceHeader = memo<ResourceHeaderProps>(({
       >
         {resource.avatar ? (
           <View style={[styles.avatarPlaceholder, { backgroundColor: resource.color }]}>
-            <Text style={styles.avatarText}>
-              {getInitials(resource.name)}
-            </Text>
+              <Image
+                source={{ uri: resource.avatar }} 
+                style={styles.avatar}
+                accessibilityLabel={`${resource.name} avatar`}
+              />
           </View>
         ) : (
           <View style={[styles.avatarPlaceholder, { backgroundColor: resource.color }]}>
