@@ -1,7 +1,7 @@
 import { useCallback } from 'react';
 import { Gesture, PinchGestureHandlerGestureEvent } from 'react-native-gesture-handler';
 import { runOnJS, useAnimatedGestureHandler, useSharedValue } from 'react-native-reanimated';
-import { ZOOM_LIMITS } from '../constants';
+import { ZOOM_LIMITS, PERFORMANCE } from '../constants';
 
 interface UseTimelineGesturesProps {
   slotHeight: number;
@@ -30,6 +30,9 @@ export const useTimelineGestures = ({
   handleVerticalZoomChange,
   handleHorizontalZoomChange,
 }: UseTimelineGesturesProps) => {
+  // Throttled zoom update to prevent excessive calls
+  const lastZoomUpdate = useSharedValue(0);
+  const ZOOM_THROTTLE_MS = PERFORMANCE.zoomThrottle; // ~30fps for zoom updates
   
   // Shared values for pinch gesture
   const verticalScale = useSharedValue(1);
@@ -76,15 +79,20 @@ export const useTimelineGestures = ({
         pinchDirection.value = 'vertical';
       }
       
-      // Apply zoom based on direction
-      if (pinchDirection.value === 'vertical') {
+      // Apply zoom based on direction with throttling
+      const now = Date.now();
+      const shouldUpdate = now - lastZoomUpdate.value >= ZOOM_THROTTLE_MS;
+      
+      if (pinchDirection.value === 'vertical' && shouldUpdate) {
         verticalScale.value = baseVerticalScale.value * event.scale;
         const newZoom = Math.max(ZOOM_LIMITS.vertical.min, Math.min(ZOOM_LIMITS.vertical.max, verticalScale.value));
         runOnJS(handleLiveVerticalZoomChange)(newZoom);
-      } else if (pinchDirection.value === 'horizontal') {
+        lastZoomUpdate.value = now;
+      } else if (pinchDirection.value === 'horizontal' && shouldUpdate) {
         horizontalScale.value = baseHorizontalScale.value * event.scale;
         const newZoom = Math.max(ZOOM_LIMITS.horizontal.min, Math.min(ZOOM_LIMITS.horizontal.max, horizontalScale.value));
         runOnJS(handleLiveHorizontalZoomChange)(newZoom);
+        lastZoomUpdate.value = now;
       }
     },
     onEnd: () => {

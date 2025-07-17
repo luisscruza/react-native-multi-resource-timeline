@@ -46,5 +46,18 @@ export const PERFORMANCE = {
   scrollThrottle: 16, // ~60fps
   gestureThrottle: 16,
   animationThrottle: 32,
+  zoomThrottle: 32, // ~30fps for zoom updates to prevent excessive worklet calls
   virtualizationBuffer: 5, // slots to render outside viewport
+  // Horizontal virtualization thresholds
+  horizontalVirtualization: {
+    columnThreshold: 8, // Enable horizontal virtualization when > 8 columns
+    visibleColumnsBuffer: 2, // Render 2 extra columns on each side
+  },
+  // Optimized thresholds for multi-column scenarios
+  virtualScrollThresholds: {
+    // Lower thresholds for better performance with multiple columns
+    events: 50, // Was 100
+    eventsWithMultipleColumns: 20, // When > 4 columns
+    columnsThreshold: 4,
+  },
 } as const;

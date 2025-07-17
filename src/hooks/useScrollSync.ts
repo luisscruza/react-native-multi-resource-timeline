@@ -9,6 +9,7 @@ interface UseScrollSyncProps {
   totalPages: number;
   currentPage: number;
   setCurrentPage: (page: number) => void;
+  onScrollX?: (scrollX: number) => void;
 }
 
 export const useScrollSync = ({
@@ -17,6 +18,7 @@ export const useScrollSync = ({
   totalPages,
   currentPage,
   setCurrentPage,
+  onScrollX,
 }: UseScrollSyncProps) => {
   
   // Refs for scroll views
@@ -38,7 +40,7 @@ export const useScrollSync = ({
     const { contentOffset, contentSize, layoutMeasurement } = event.nativeEvent;
     
     // Show scroll indicator
-    scrollIndicatorOpacity.value = withTiming(1, { duration: 200 });
+    scrollIndicatorOpacity.value = withTiming(1, { duration: 150 });
     
     // Calculate bounded scroll position
     const maxScrollX = Math.max(0, contentSize.width - layoutMeasurement.width);
@@ -47,27 +49,32 @@ export const useScrollSync = ({
     // Update scroll progress
     headerScrollProgress.value = maxScrollX > 0 ? boundedX / maxScrollX : 0;
     
-    // Sync content scroll
+    // Sync content scroll immediately without animation for better performance
     if (contentScrollRef.current) {
       contentScrollRef.current.scrollTo({ x: boundedX, animated: false });
     }
     
-    // Update pagination with debouncing
+    // Update pagination more efficiently
     const pageWidth = currentColumnWidth * resourcesPerPage;
     const page = Math.round(boundedX / pageWidth);
     if (page !== currentPage && page >= 0 && page < totalPages) {
       setCurrentPage(page);
     }
     
-    // Hide scroll indicator with delay
-    setTimeout(() => {
-      scrollIndicatorOpacity.value = withTiming(0, { duration: 1000 });
-    }, 1000);
+    // Notify scroll position for virtualization
+    onScrollX?.(boundedX);
     
-    // Reset scrolling flag
-    setTimeout(() => {
+    // Hide scroll indicator with shorter delay for better responsiveness
+    const timeoutId = setTimeout(() => {
+      scrollIndicatorOpacity.value = withTiming(0, { duration: 800 });
+    }, 800);
+    
+    // Reset scrolling flag more efficiently
+    requestAnimationFrame(() => {
       isScrollingHeader.current = false;
-    }, PERFORMANCE.scrollThrottle);
+    });
+    
+    return () => clearTimeout(timeoutId);
   }, [
     currentPage, 
     totalPages, 
@@ -86,7 +93,7 @@ export const useScrollSync = ({
     const { contentOffset, contentSize, layoutMeasurement } = event.nativeEvent;
     
     // Show scroll indicator
-    scrollIndicatorOpacity.value = withTiming(1, { duration: 200 });
+    scrollIndicatorOpacity.value = withTiming(1, { duration: 150 });
     
     // Calculate bounded scroll position
     const maxScrollX = Math.max(0, contentSize.width - layoutMeasurement.width);
@@ -95,27 +102,32 @@ export const useScrollSync = ({
     // Update scroll progress
     contentScrollProgress.value = maxScrollX > 0 ? boundedX / maxScrollX : 0;
     
-    // Sync header scroll
+    // Sync header scroll immediately without animation for better performance
     if (headerScrollRef.current) {
       headerScrollRef.current.scrollTo({ x: boundedX, animated: false });
     }
     
-    // Update pagination with debouncing
+    // Update pagination more efficiently
     const pageWidth = currentColumnWidth * resourcesPerPage;
     const page = Math.round(boundedX / pageWidth);
     if (page !== currentPage && page >= 0 && page < totalPages) {
       setCurrentPage(page);
     }
     
-    // Hide scroll indicator with delay
-    setTimeout(() => {
-      scrollIndicatorOpacity.value = withTiming(0, { duration: 1000 });
-    }, 1000);
+    // Notify scroll position for virtualization
+    onScrollX?.(boundedX);
     
-    // Reset scrolling flag
-    setTimeout(() => {
+    // Hide scroll indicator with shorter delay for better responsiveness
+    const timeoutId = setTimeout(() => {
+      scrollIndicatorOpacity.value = withTiming(0, { duration: 800 });
+    }, 800);
+    
+    // Reset scrolling flag more efficiently
+    requestAnimationFrame(() => {
       isScrollingContent.current = false;
-    }, PERFORMANCE.scrollThrottle);
+    });
+    
+    return () => clearTimeout(timeoutId);
   }, [
     currentPage, 
     totalPages, 

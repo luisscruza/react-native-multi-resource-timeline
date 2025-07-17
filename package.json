@@ -4,6 +4,15 @@
   "description": "A powerful, customizable multi-resource timeline component for React Native with advanced gesture support, zoom capabilities, and working hours visualization",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
+  "react-native": "src/index.ts",
+  "source": "src/index.ts",
+  "exports": {
+    ".": {
+      "import": "./lib/index.js",
+      "require": "./lib/index.js",
+      "types": "./lib/index.d.ts"
+    }
+  },
   "files": [
     "lib",
     "src",
@@ -54,11 +63,6 @@
     "expo-haptics": {
       "optional": true
     }
-  },
-  "dependencies": {
-    "react-native-gesture-handler": "^2.14.0",
-    "react-native-reanimated": "^3.6.0",
-    "react-native-calendars": "^1.1301.0"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",

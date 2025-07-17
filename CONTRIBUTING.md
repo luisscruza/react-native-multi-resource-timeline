@@ -27,7 +27,7 @@ Pull requests are the best way to propose changes to the codebase. We actively w
 
 1. **Fork and clone the repository**
    ```bash
-   git clone https://github.com/yourusername/react-native-multi-resource-timeline.git
+   git clone https://github.com/luisscruza/react-native-multi-resource-timeline.git
    cd react-native-multi-resource-timeline
    ```
 
@@ -75,9 +75,9 @@ This project and everyone participating in it is governed by our Code of Conduct
 
 In short, when you submit code changes, your submissions are understood to be under the same [MIT License](http://choosealicense.com/licenses/mit/) that covers the project.
 
-## Report bugs using GitHub's [issue tracker](https://github.com/yourusername/react-native-multi-resource-timeline/issues)
+## Report bugs using GitHub's [issue tracker](https://github.com/luisscruza/react-native-multi-resource-timeline/issues)
 
-We use GitHub issues to track public bugs. Report a bug by [opening a new issue](https://github.com/yourusername/react-native-multi-resource-timeline/issues/new).
+We use GitHub issues to track public bugs. Report a bug by [opening a new issue](https://github.com/luisscruza/react-native-multi-resource-timeline/issues/new).
 
 **Great Bug Reports** tend to have:
 
@@ -91,7 +91,7 @@ We use GitHub issues to track public bugs. Report a bug by [opening a new issue]
 
 ## Feature Requests
 
-We welcome feature requests! Please [open an issue](https://github.com/yourusername/react-native-multi-resource-timeline/issues/new) with:
+We welcome feature requests! Please [open an issue](https://github.com/luisscruza/react-native-multi-resource-timeline/issues/new) with:
 
 - Clear description of the feature
 - Use case and why it would be valuable
