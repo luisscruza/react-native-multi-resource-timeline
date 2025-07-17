@@ -1,6 +1,6 @@
 import React, { memo } from 'react';
 import Animated, { Easing, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
-import { DragSelection, TimelineTheme } from '../types';
+import { DragSelection, DragSelectionOverlayStyle, TimelineTheme } from '../types';
 
 interface DragSelectionOverlayProps {
   dragSelection: DragSelection | null;
@@ -8,6 +8,7 @@ interface DragSelectionOverlayProps {
   width: number;
   theme: TimelineTheme;
   resourceId: string;
+  overlayStyle?: DragSelectionOverlayStyle;
 }
 
 const DragSelectionOverlay: React.FC<DragSelectionOverlayProps> = ({
@@ -16,6 +17,7 @@ const DragSelectionOverlay: React.FC<DragSelectionOverlayProps> = ({
   width,
   theme,
   resourceId,
+  overlayStyle,
 }) => {
   const opacity = useSharedValue(0);
 
@@ -43,23 +45,29 @@ const DragSelectionOverlay: React.FC<DragSelectionOverlayProps> = ({
     const selectionHeight = (endSlot - startSlot + 1) * slotHeight;
     const topPosition = startSlot * slotHeight;
 
+    // Merge custom styles with defaults
+    const defaultBackgroundColor = '#E8F5E8';
+    const defaultBorderColor = '#4CAF50';
+    const defaultBorderWidth = 2;
+    const defaultBorderRadius = 4;
+
     return {
       opacity: opacity.value,
       height: selectionHeight,
       top: topPosition,
-      backgroundColor: withTiming('#E8F5E8', {
+      backgroundColor: withTiming(overlayStyle?.backgroundColor ?? defaultBackgroundColor, {
         duration: 200,
         easing: Easing.out(Easing.quad),
       }),
-      borderColor: withTiming('#4CAF50', {
+      borderColor: withTiming(overlayStyle?.borderColor ?? defaultBorderColor, {
         duration: 200,
         easing: Easing.out(Easing.quad),
       }),
-      borderWidth: withTiming(2, {
+      borderWidth: withTiming(overlayStyle?.borderWidth ?? defaultBorderWidth, {
         duration: 200,
         easing: Easing.out(Easing.quad),
       }),
-      borderRadius: 4,
+      borderRadius: overlayStyle?.borderRadius ?? defaultBorderRadius,
     };
   });
 

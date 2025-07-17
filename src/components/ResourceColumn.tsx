@@ -4,7 +4,7 @@ import { GestureDetector } from 'react-native-gesture-handler';
 import Animated, { Easing, useAnimatedStyle, useSharedValue, withSpring, withTiming } from 'react-native-reanimated';
 import { useEventPositioning } from '../hooks/useEventPositioning';
 import { createTimelineStyles } from '../styles/timelineStyles';
-import { DragSelection, MultiResourceEvent, Resource, TimelineTheme, TimeSlot, WorkingHoursStyle } from '../types';
+import { DragSelection, DragSelectionOverlayStyle, MultiResourceEvent, Resource, TimelineTheme, TimeSlot, WorkingHoursStyle } from '../types';
 import { WorkingSlots } from '../utils/workingHoursParser';
 import DragSelectionOverlay from './DragSelectionOverlay';
 import TimelineEvent from './TimelineEvent';
@@ -29,6 +29,7 @@ interface ResourceColumnProps {
   showWorkingHoursBackground?: boolean;
   workingHoursStyle?: WorkingHoursStyle;
   workingSlots?: WorkingSlots;
+  dragSelectionOverlayStyle?: DragSelectionOverlayStyle;
 }
 
 const ResourceColumnComponent: React.FC<ResourceColumnProps> = ({
@@ -50,6 +51,7 @@ const ResourceColumnComponent: React.FC<ResourceColumnProps> = ({
   showWorkingHoursBackground = false,
   workingHoursStyle,
   workingSlots,
+  dragSelectionOverlayStyle,
 }) => {
   const styles = createTimelineStyles(theme);
   const { getEventPosition, getEventStyling } = useEventPositioning({
@@ -201,6 +203,7 @@ const ResourceColumnComponent: React.FC<ResourceColumnProps> = ({
             width={width}
             theme={theme}
             resourceId={resource.id}
+            overlayStyle={dragSelectionOverlayStyle}
           />
         
           {/* Events */}

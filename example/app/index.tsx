@@ -92,6 +92,12 @@ export default function HomeScreen() {
             workingBackground: 'rgba(76, 175, 80, 0.1)',
             nonWorkingBackground: 'rgba(158, 158, 158, 0.05)'
           }}
+          dragSelectionOverlayStyle={{
+            backgroundColor: 'rgba(33, 150, 243, 0.1)',
+            borderColor: '#2196F3',
+            borderWidth: 3,
+            borderRadius: 8
+          }}
         />
       </View>
     </SafeAreaView>

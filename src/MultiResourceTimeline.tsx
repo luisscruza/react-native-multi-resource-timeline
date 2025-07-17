@@ -63,6 +63,7 @@ const MultiResourceTimeline = forwardRef<MultiResourceTimelineRef, MultiResource
   showWorkingHoursBackground = false,
   workingHoursStyle,
   clearSelectionAfterDrag = true,
+  dragSelectionOverlayStyle,
   onEventPress,
   onTimeSlotSelect,
   onLoadingChange,
@@ -491,6 +492,7 @@ const MultiResourceTimeline = forwardRef<MultiResourceTimelineRef, MultiResource
                           showWorkingHoursBackground={showWorkingHoursBackground && hasWorkingHours}
                           workingHoursStyle={workingHoursStyle}
                           workingSlots={getWorkingHoursForResource(resource.id)}
+                          dragSelectionOverlayStyle={dragSelectionOverlayStyle}
                         />
                       ))}
                       

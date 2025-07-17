@@ -74,6 +74,13 @@ export interface DragSelection {
   endSlot: number;
 }
 
+export interface DragSelectionOverlayStyle {
+  backgroundColor?: string;
+  borderColor?: string;
+  borderWidth?: number;
+  borderRadius?: number;
+}
+
 export interface MultiResourceTimelineRef {
   clearSelection: () => void;
   clearDragSelection: () => void;
@@ -98,6 +105,7 @@ export interface MultiResourceTimelineProps {
   showWorkingHoursBackground?: boolean;
   workingHoursStyle?: WorkingHoursStyle;
   clearSelectionAfterDrag?: boolean;
+  dragSelectionOverlayStyle?: DragSelectionOverlayStyle;
   onEventPress?: (event: MultiResourceEvent) => void;
   onTimeSlotSelect?: (resourceId: string, startSlot: number, endSlot: number) => void;
   onLoadingChange?: (isLoading: boolean) => void;
