@@ -273,4 +273,4 @@ See [CHANGELOG.md](CHANGELOG.md) for a detailed list of changes.
 - 🤖 Android: >= API 21
 - 🌐 Web: Supported via react-native-web
 
-For issues and feature requests, please visit our [GitHub repository](https://github.com/yourusername/react-native-multi-resource-timeline).
+For issues and feature requests, please visit our [GitHub repository](https://github.com/luisscruza/react-native-multi-resource-timeline).
