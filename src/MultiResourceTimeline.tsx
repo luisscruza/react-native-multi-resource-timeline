@@ -193,6 +193,14 @@ const MultiResourceTimeline = forwardRef<MultiResourceTimelineRef, MultiResource
     onEventPress,
   });
 
+  // Calculations - moved before usage
+  const totalPages = Math.ceil(resources.length / effectiveResourcesPerPage);
+  const totalContentWidth = currentColumnWidth * resources.length;
+  const scrollViewWidth = width - HOUR_WIDTH - 40;
+
+  // Horizontal scroll tracking for virtualization
+  const [scrollX, setScrollX] = useState(0);
+
   // Virtual scrolling for large datasets
   const containerHeight = (endHour - startHour) * currentHourHeight;
   const { visibleItems: visibleTimeSlots, handleScroll: handleVirtualScroll } = useVirtualScroll({
@@ -221,14 +229,6 @@ const MultiResourceTimeline = forwardRef<MultiResourceTimelineRef, MultiResource
   const resourcesToRender = isVirtualized ? visibleResources : resources;
   const virtualizedContentWidth = isVirtualized ? 
     visibleResources.length * currentColumnWidth : totalContentWidth;
-
-  // Calculations
-  const totalPages = Math.ceil(resources.length / effectiveResourcesPerPage);
-  const totalContentWidth = currentColumnWidth * resources.length;
-  const scrollViewWidth = width - HOUR_WIDTH - 40;
-
-  // Horizontal scroll tracking for virtualization
-  const [scrollX, setScrollX] = useState(0);
 
   const {
     headerScrollRef,
