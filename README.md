@@ -124,6 +124,8 @@ export default App;
 | `enableHaptics` | `boolean` | `true` | Enable haptic feedback |
 | `showWorkingHoursBackground` | `boolean` | `false` | Show working hours background |
 | `workingHoursStyle` | `WorkingHoursStyle` | `undefined` | Working hours styling |
+| `clearSelectionAfterDrag` | `boolean` | `true` | Auto-clear selection after drag completion |
+| `dragSelectionOverlayStyle` | `DragSelectionOverlayStyle` | `undefined` | Custom styling for drag selection overlay |
 | `onEventPress` | `(event: MultiResourceEvent) => void` | `undefined` | Event press handler |
 | `onTimeSlotSelect` | `(resourceId: string, startSlot: number, endSlot: number) => void` | `undefined` | Time slot selection handler |
 | `onLoadingChange` | `(isLoading: boolean) => void` | `undefined` | Loading state change handler |
@@ -163,6 +165,16 @@ interface WorkingHours {
 }
 ```
 
+#### DragSelectionOverlayStyle
+```tsx
+interface DragSelectionOverlayStyle {
+  backgroundColor?: string;
+  borderColor?: string;
+  borderWidth?: number;
+  borderRadius?: number;
+}
+```
+
 ## Advanced Usage
 
 ### Working Hours
@@ -186,6 +198,27 @@ const resourceWithWorkingHours = {
   workingHoursStyle={{
     workingBackground: 'rgba(76, 175, 80, 0.1)',
     nonWorkingBackground: 'rgba(158, 158, 158, 0.1)'
+  }}
+/>
+```
+
+### Custom Drag Selection Overlay
+
+Customize the appearance of the drag selection overlay:
+
+```tsx
+<MultiResourceTimeline
+  resources={resources}
+  events={events}
+  date="2025-07-15"
+  onTimeSlotSelect={(resourceId, startSlot, endSlot) => {
+    console.log('Selected:', { resourceId, startSlot, endSlot });
+  }}
+  dragSelectionOverlayStyle={{
+    backgroundColor: 'rgba(33, 150, 243, 0.1)',
+    borderColor: '#2196F3',
+    borderWidth: 3,
+    borderRadius: 8
   }}
 />
 ```

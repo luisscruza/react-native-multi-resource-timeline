@@ -4,8 +4,9 @@ import { GestureDetector } from 'react-native-gesture-handler';
 import Animated, { Easing, useAnimatedStyle, useSharedValue, withSpring, withTiming } from 'react-native-reanimated';
 import { useEventPositioning } from '../hooks/useEventPositioning';
 import { createTimelineStyles } from '../styles/timelineStyles';
-import { DragSelection, MultiResourceEvent, Resource, TimelineTheme, TimeSlot, WorkingHoursStyle } from '../types';
+import { DragSelection, DragSelectionOverlayStyle, MultiResourceEvent, Resource, TimelineTheme, TimeSlot, WorkingHoursStyle } from '../types';
 import { WorkingSlots } from '../utils/workingHoursParser';
+import DragSelectionOverlay from './DragSelectionOverlay';
 import TimelineEvent from './TimelineEvent';
 import WorkingHoursBackground from './WorkingHoursBackground';
 
@@ -28,6 +29,7 @@ interface ResourceColumnProps {
   showWorkingHoursBackground?: boolean;
   workingHoursStyle?: WorkingHoursStyle;
   workingSlots?: WorkingSlots;
+  dragSelectionOverlayStyle?: DragSelectionOverlayStyle;
 }
 
 const ResourceColumnComponent: React.FC<ResourceColumnProps> = ({
@@ -49,6 +51,7 @@ const ResourceColumnComponent: React.FC<ResourceColumnProps> = ({
   showWorkingHoursBackground = false,
   workingHoursStyle,
   workingSlots,
+  dragSelectionOverlayStyle,
 }) => {
   const styles = createTimelineStyles(theme);
   const { getEventPosition, getEventStyling } = useEventPositioning({
@@ -90,34 +93,27 @@ const ResourceColumnComponent: React.FC<ResourceColumnProps> = ({
     const isResourceSelected = selectedTimeSlot?.resourceId === resource.id;
     const selectedSlot = isResourceSelected ? (selectedTimeSlot?.hourIndex ?? -1) : -1;
     
-    const isDragForThisResource = dragSelection?.resourceId === resource.id;
-    const dragStartSlot = isDragForThisResource ? dragSelection.startSlot : -1;
-    const dragEndSlot = isDragForThisResource ? dragSelection.endSlot : -1;
-    
     // Batch the update to prevent excessive animations
     const timer = setTimeout(() => {
       selectionState.value = {
         selectedSlot,
-        dragStartSlot,
-        dragEndSlot,
+        dragStartSlot: -1, // No longer needed for individual slot styling
+        dragEndSlot: -1,   // No longer needed for individual slot styling
         resourceSelected: isResourceSelected,
       };
     }, 16); // One frame delay to batch updates
 
     return () => clearTimeout(timer);
-  }, [selectedTimeSlot, dragSelection, resource.id, selectionState]);
+  }, [selectedTimeSlot, resource.id, selectionState]);
 
   // Create a single animated style function that we'll use for each slot
   const getSlotAnimatedStyle = useCallback((slotIndex: number) => 
     useAnimatedStyle(() => {
-      const { selectedSlot, dragStartSlot, dragEndSlot, resourceSelected } = selectionState.value;
+      const { selectedSlot, resourceSelected } = selectionState.value;
       
       const isSelected = resourceSelected && selectedSlot === slotIndex;
-      const isDragSelected = dragStartSlot !== -1 && dragEndSlot !== -1 &&
-        slotIndex >= Math.min(dragStartSlot, dragEndSlot) &&
-        slotIndex <= Math.max(dragStartSlot, dragEndSlot);
       
-      const borderWidth = withSpring(isSelected ? 2 : isDragSelected ? 1 : 0, {
+      const borderWidth = withSpring(isSelected ? 2 : 0, {
         damping: 15,
         stiffness: 300,
       });
@@ -127,7 +123,6 @@ const ResourceColumnComponent: React.FC<ResourceColumnProps> = ({
       
       const backgroundColor = withTiming(
         isSelected ? theme.colors.selection.background : 
-        isDragSelected ? '#E8F5E8' : 
         isWorkingSlot ? theme.colors.surface : 'transparent',
         {
           duration: 200,
@@ -136,9 +131,7 @@ const ResourceColumnComponent: React.FC<ResourceColumnProps> = ({
       );
       
       const borderColor = withTiming(
-        isSelected ? theme.colors.selection.border : 
-        isDragSelected ? '#4CAF50' : 
-        'transparent', 
+        isSelected ? theme.colors.selection.border : 'transparent', 
         {
           duration: 200,
           easing: Easing.out(Easing.quad),
@@ -185,7 +178,6 @@ const ResourceColumnComponent: React.FC<ResourceColumnProps> = ({
                     {
                       height: slotHeight - 2,
                       top: index * slotHeight,
-                      borderStyle: 'dotted',
                       margin: 1,
                     },
                     animatedStyle,
@@ -203,6 +195,16 @@ const ResourceColumnComponent: React.FC<ResourceColumnProps> = ({
               />
             );
           })}
+
+          {/* Drag Selection Overlay */}
+          <DragSelectionOverlay
+            dragSelection={dragSelection}
+            slotHeight={slotHeight}
+            width={width}
+            theme={theme}
+            resourceId={resource.id}
+            overlayStyle={dragSelectionOverlayStyle}
+          />
         
           {/* Events */}
           {resourceEvents.map((event, index) => {
@@ -294,7 +296,7 @@ const arePropsEqual = (prevProps: ResourceColumnProps, nextProps: ResourceColumn
     return false;
   }
   
-  // Check drag selection state
+  // Check if drag selection for this resource changed (for overlay)
   const prevDragForThisResource = prevProps.dragSelection?.resourceId === prevProps.resource.id;
   const nextDragForThisResource = nextProps.dragSelection?.resourceId === nextProps.resource.id;
   

@@ -62,6 +62,8 @@ const MultiResourceTimeline = forwardRef<MultiResourceTimelineRef, MultiResource
   enableHaptics = true,
   showWorkingHoursBackground = false,
   workingHoursStyle,
+  clearSelectionAfterDrag = true,
+  dragSelectionOverlayStyle,
   onEventPress,
   onTimeSlotSelect,
   onLoadingChange,
@@ -114,11 +116,12 @@ const MultiResourceTimeline = forwardRef<MultiResourceTimelineRef, MultiResource
     dragSelection,
     currentDragSelection,
     clearSelection,
+    clearDragSelection,
     handleTimeSlotPress,
     startDragSelection,
     updateDragSelection,
     completeDragSelection,
-  } = useTimelineSelection();
+  } = useTimelineSelection(clearSelectionAfterDrag);
 
   // Working hours hook
   const { getWorkingHoursForResource, hasWorkingHours } = useWorkingHours(
@@ -287,6 +290,9 @@ const MultiResourceTimeline = forwardRef<MultiResourceTimelineRef, MultiResource
       clearSelection();
       clearKeyboardSelection();
     },
+    clearDragSelection: () => {
+      clearDragSelection();
+    },
     scrollToTime: (hour: number) => {
       const position = (hour - startHour) * currentHourHeight;
       // Implementation would require vertical scroll ref
@@ -298,7 +304,7 @@ const MultiResourceTimeline = forwardRef<MultiResourceTimelineRef, MultiResource
         lightImpact();
       }
     },
-  }), [clearSelection, clearKeyboardSelection, startHour, currentHourHeight, resources, scrollToResourcePosition, lightImpact]);
+  }), [clearSelection, clearDragSelection, clearKeyboardSelection, startHour, currentHourHeight, resources, scrollToResourcePosition, lightImpact]);
 
   // Effects with proper cleanup to prevent memory leaks
   useEffect(() => {
@@ -486,6 +492,7 @@ const MultiResourceTimeline = forwardRef<MultiResourceTimelineRef, MultiResource
                           showWorkingHoursBackground={showWorkingHoursBackground && hasWorkingHours}
                           workingHoursStyle={workingHoursStyle}
                           workingSlots={getWorkingHoursForResource(resource.id)}
+                          dragSelectionOverlayStyle={dragSelectionOverlayStyle}
                         />
                       ))}
                       

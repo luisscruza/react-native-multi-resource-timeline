@@ -10,7 +10,7 @@ const createSharedValue = <T>(initialValue: T): SharedValue<T> => ({
   value: initialValue,
 });
 
-export const useTimelineSelection = () => {
+export const useTimelineSelection = (clearAfterDrag: boolean = true) => {
   const [selectedTimeSlot, setSelectedTimeSlot] = useState<{ resourceId: string; hourIndex: number } | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [dragSelection, setDragSelection] = useState<DragSelection | null>(null);
@@ -19,6 +19,12 @@ export const useTimelineSelection = () => {
 
   const clearSelection = useCallback(() => {
     setSelectedTimeSlot(null);
+    setIsDragging(false);
+    setDragSelection(null);
+    currentDragSelection.value = null;
+  }, []);
+
+  const clearDragSelection = useCallback(() => {
     setIsDragging(false);
     setDragSelection(null);
     currentDragSelection.value = null;
@@ -61,10 +67,17 @@ export const useTimelineSelection = () => {
       const { resourceId, startSlot, endSlot } = dragData;
       setIsDragging(false);
       onComplete(resourceId, Math.min(startSlot, endSlot), Math.max(startSlot, endSlot));
+      
+      // Auto-clear after completion if enabled
+      if (clearAfterDrag) {
+        setTimeout(() => {
+          clearDragSelection();
+        }, 100); // Small delay to prevent visual glitch
+      }
     } else {
       clearSelection();
     }
-  }, [dragSelection, clearSelection]);
+  }, [dragSelection, clearSelection, clearDragSelection, clearAfterDrag]);
 
   return {
     selectedTimeSlot,
@@ -72,6 +85,7 @@ export const useTimelineSelection = () => {
     dragSelection,
     currentDragSelection,
     clearSelection,
+    clearDragSelection,
     handleTimeSlotPress,
     startDragSelection,
     updateDragSelection,
