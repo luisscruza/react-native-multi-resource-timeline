@@ -47,7 +47,7 @@ const ResourceHeader = memo<ResourceHeaderProps>(({
         ]}
       >
         {resource.avatar ? (
-          <View style={[styles.avatarPlaceholder, { backgroundColor: resource.color }]}>
+          <View style={[styles.avatarContainer, { backgroundColor: resource.color }]}>
               <Image
                 source={{ uri: resource.avatar }} 
                 style={styles.avatar}
