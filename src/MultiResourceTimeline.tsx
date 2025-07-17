@@ -82,12 +82,29 @@ const MultiResourceTimeline = forwardRef<MultiResourceTimelineRef, MultiResource
   const theme: TimelineTheme = useMemo(() => getTheme(themeProp), [themeProp]);
   const styles = useMemo(() => createTimelineStyles(theme), [theme]);
 
+  // Calculate dynamic column width based on actual displayed resources
+  const availableWidth = width - HOUR_WIDTH - 40;
+  const actualResourceCount = resources.length;
+  const effectiveResourcesPerPage = Math.min(actualResourceCount, resourcesPerPage);
+  const dynamicColumnWidth = effectiveResourcesPerPage > 0 ? availableWidth / effectiveResourcesPerPage : availableWidth;
+
+  const {
+    currentHourHeight,
+    currentEventMinHeight,
+    currentColumnWidth,
+    handleVerticalZoomChange,
+    handleHorizontalZoomChange,
+    handleLiveVerticalZoomChange,
+    handleLiveHorizontalZoomChange,
+    resetZoom,
+  } = useTimelineZoom(hourHeight, eventMinHeight, dynamicColumnWidth * 1.1);
+
   // Enhanced hooks
   const { timeSlots, slotHeight, formatTimeSlot, getCurrentTimePosition } = useTimelineCalculations({
     startHour,
     endHour,
     timeSlotInterval,
-    hourHeight,
+    hourHeight: currentHourHeight,
     date,
   });
 
@@ -111,23 +128,6 @@ const MultiResourceTimeline = forwardRef<MultiResourceTimelineRef, MultiResource
     endHour,
     timeSlotInterval
   );
-
-  // Calculate dynamic column width based on actual displayed resources
-  const availableWidth = width - HOUR_WIDTH - 40;
-  const actualResourceCount = resources.length;
-  const effectiveResourcesPerPage = Math.min(actualResourceCount, resourcesPerPage);
-  const dynamicColumnWidth = effectiveResourcesPerPage > 0 ? availableWidth / effectiveResourcesPerPage : availableWidth;
-
-  const {
-    currentHourHeight,
-    currentEventMinHeight,
-    currentColumnWidth,
-    handleVerticalZoomChange,
-    handleHorizontalZoomChange,
-    handleLiveVerticalZoomChange,
-    handleLiveHorizontalZoomChange,
-    resetZoom,
-  } = useTimelineZoom(hourHeight, eventMinHeight, dynamicColumnWidth * 1.1);
 
   // Haptic feedback
   const {
@@ -193,6 +193,14 @@ const MultiResourceTimeline = forwardRef<MultiResourceTimelineRef, MultiResource
     onEventPress,
   });
 
+  // Calculations - moved before usage
+  const totalPages = Math.ceil(resources.length / effectiveResourcesPerPage);
+  const totalContentWidth = currentColumnWidth * resources.length;
+  const scrollViewWidth = width - HOUR_WIDTH - 40;
+
+  // Horizontal scroll tracking for virtualization
+  const [scrollX, setScrollX] = useState(0);
+
   // Virtual scrolling for large datasets
   const containerHeight = (endHour - startHour) * currentHourHeight;
   const { visibleItems: visibleTimeSlots, handleScroll: handleVirtualScroll } = useVirtualScroll({
@@ -221,14 +229,6 @@ const MultiResourceTimeline = forwardRef<MultiResourceTimelineRef, MultiResource
   const resourcesToRender = isVirtualized ? visibleResources : resources;
   const virtualizedContentWidth = isVirtualized ? 
     visibleResources.length * currentColumnWidth : totalContentWidth;
-
-  // Calculations
-  const totalPages = Math.ceil(resources.length / effectiveResourcesPerPage);
-  const totalContentWidth = currentColumnWidth * resources.length;
-  const scrollViewWidth = width - HOUR_WIDTH - 40;
-
-  // Horizontal scroll tracking for virtualization
-  const [scrollX, setScrollX] = useState(0);
 
   const {
     headerScrollRef,
