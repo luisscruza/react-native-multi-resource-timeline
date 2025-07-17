@@ -174,6 +174,7 @@ const MultiResourceTimeline = forwardRef<MultiResourceTimelineRef, MultiResource
     handleLiveHorizontalZoomChange,
     handleVerticalZoomChange,
     handleHorizontalZoomChange,
+    disableHorizontalZoom: resources.length === 1,
   });
 
   // Keyboard navigation

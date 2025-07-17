@@ -15,6 +15,7 @@ interface UseTimelineGesturesProps {
   handleLiveHorizontalZoomChange: (zoom: number) => void;
   handleVerticalZoomChange: (zoom: number) => void;
   handleHorizontalZoomChange: (zoom: number) => void;
+  disableHorizontalZoom?: boolean;
 }
 
 export const useTimelineGestures = ({
@@ -29,6 +30,7 @@ export const useTimelineGestures = ({
   handleLiveHorizontalZoomChange,
   handleVerticalZoomChange,
   handleHorizontalZoomChange,
+  disableHorizontalZoom = false,
 }: UseTimelineGesturesProps) => {
   // Throttled zoom update to prevent excessive calls
   const lastZoomUpdate = useSharedValue(0);
@@ -67,7 +69,7 @@ export const useTimelineGestures = ({
       
       // Determine pinch direction
       if (pinchDirection.value === 'none' && event.scale !== 1) {
-        if (deltaX > deltaY) {
+        if (deltaX > deltaY && !disableHorizontalZoom) {
           pinchDirection.value = 'horizontal';
         } else {
           pinchDirection.value = 'vertical';
@@ -88,7 +90,7 @@ export const useTimelineGestures = ({
         const newZoom = Math.max(ZOOM_LIMITS.vertical.min, Math.min(ZOOM_LIMITS.vertical.max, verticalScale.value));
         runOnJS(handleLiveVerticalZoomChange)(newZoom);
         lastZoomUpdate.value = now;
-      } else if (pinchDirection.value === 'horizontal' && shouldUpdate) {
+      } else if (pinchDirection.value === 'horizontal' && !disableHorizontalZoom && shouldUpdate) {
         horizontalScale.value = baseHorizontalScale.value * event.scale;
         const newZoom = Math.max(ZOOM_LIMITS.horizontal.min, Math.min(ZOOM_LIMITS.horizontal.max, horizontalScale.value));
         runOnJS(handleLiveHorizontalZoomChange)(newZoom);
@@ -101,7 +103,7 @@ export const useTimelineGestures = ({
         const newZoom = Math.max(ZOOM_LIMITS.vertical.min, Math.min(ZOOM_LIMITS.vertical.max, verticalScale.value));
         runOnJS(handleVerticalZoomChange)(newZoom);
         verticalScale.value = 1;
-      } else if (pinchDirection.value === 'horizontal') {
+      } else if (pinchDirection.value === 'horizontal' && !disableHorizontalZoom) {
         const newZoom = Math.max(ZOOM_LIMITS.horizontal.min, Math.min(ZOOM_LIMITS.horizontal.max, horizontalScale.value));
         runOnJS(handleHorizontalZoomChange)(newZoom);
         horizontalScale.value = 1;
