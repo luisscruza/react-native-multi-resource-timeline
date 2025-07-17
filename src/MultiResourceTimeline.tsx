@@ -27,6 +27,7 @@ import {
   TimelineTheme } from './types';
 
 import { useHapticFeedback } from './hooks/useHapticFeedback';
+import { useHorizontalVirtualization } from './hooks/useHorizontalVirtualization';
 import { useKeyboardNavigation } from './hooks/useKeyboardNavigation';
 import { useScrollSync } from './hooks/useScrollSync';
 import { useTimelineCalculations } from './hooks/useTimelineCalculations';
@@ -201,10 +202,33 @@ const MultiResourceTimeline = forwardRef<MultiResourceTimelineRef, MultiResource
     overscan: 5,
   });
 
+  // Horizontal virtualization for better performance with many columns
+  const {
+    visibleResources,
+    startIndex,
+    endIndex,
+    offsetLeft,
+    offsetRight,
+    isVirtualized,
+  } = useHorizontalVirtualization({
+    resources,
+    columnWidth: currentColumnWidth,
+    scrollViewWidth,
+    scrollX,
+  });
+
+  // Use virtualized resources for rendering, but keep original for calculations
+  const resourcesToRender = isVirtualized ? visibleResources : resources;
+  const virtualizedContentWidth = isVirtualized ? 
+    visibleResources.length * currentColumnWidth : totalContentWidth;
+
   // Calculations
   const totalPages = Math.ceil(resources.length / effectiveResourcesPerPage);
   const totalContentWidth = currentColumnWidth * resources.length;
   const scrollViewWidth = width - HOUR_WIDTH - 40;
+
+  // Horizontal scroll tracking for virtualization
+  const [scrollX, setScrollX] = useState(0);
 
   const {
     headerScrollRef,
@@ -219,6 +243,7 @@ const MultiResourceTimeline = forwardRef<MultiResourceTimelineRef, MultiResource
     totalPages,
     currentPage,
     setCurrentPage,
+    onScrollX: setScrollX,
   });
 
   // Now indicator
@@ -359,19 +384,32 @@ const MultiResourceTimeline = forwardRef<MultiResourceTimelineRef, MultiResource
             onScroll={handleHeaderScroll}
             scrollEventThrottle={PERFORMANCE.scrollThrottle}
             bounces={false}
+            removeClippedSubviews={true}
+            decelerationRate="fast"
+            directionalLockEnabled={true}
             style={{ width: scrollViewWidth }}
             contentContainerStyle={{ width: totalContentWidth }}
           >
             <View style={{ flexDirection: 'row', width: totalContentWidth }}>
-              {resources.map((resource, index) => (
+              {/* Left offset for virtualization */}
+              {isVirtualized && offsetLeft > 0 && (
+                <View style={{ width: offsetLeft }} />
+              )}
+              
+              {resourcesToRender.map((resource, index) => (
                 <ResourceHeader
                   key={resource.id}
                   resource={resource}
-                  index={index}
+                  index={isVirtualized ? startIndex + index : index}
                   width={currentColumnWidth}
                   theme={theme}
                 />
               ))}
+              
+              {/* Right offset for virtualization */}
+              {isVirtualized && offsetRight > 0 && (
+                <View style={{ width: offsetRight }} />
+              )}
             </View>
           </ScrollView>
           
@@ -411,15 +449,23 @@ const MultiResourceTimeline = forwardRef<MultiResourceTimelineRef, MultiResource
                     onScroll={handleContentScroll}
                     scrollEventThrottle={PERFORMANCE.scrollThrottle}
                     bounces={false}
+                    removeClippedSubviews={true}
+                    decelerationRate="fast"
+                    directionalLockEnabled={true}
                     style={{ width: scrollViewWidth }}
                     contentContainerStyle={{ width: totalContentWidth }}
                   >
                     <View style={{ flexDirection: 'row', width: totalContentWidth }}>
-                      {resources.map((resource, index) => (
+                      {/* Left offset for virtualization */}
+                      {isVirtualized && offsetLeft > 0 && (
+                        <View style={{ width: offsetLeft }} />
+                      )}
+                      
+                      {resourcesToRender.map((resource, index) => (
                         <ResourceColumn
                           key={resource.id}
                           resource={resource}
-                          resourceIndex={index}
+                          resourceIndex={isVirtualized ? startIndex + index : index}
                           events={filteredEvents}
                           timeSlots={isVirtualScrollEnabled ? visibleTimeSlots.map(v => timeSlots[v.index]) : timeSlots}
                           slotHeight={slotHeight}
@@ -430,7 +476,7 @@ const MultiResourceTimeline = forwardRef<MultiResourceTimelineRef, MultiResource
                           eventMinHeight={currentEventMinHeight}
                           selectedTimeSlot={selectedTimeSlot}
                           dragSelection={dragSelection}
-                          dragGesture={createDragGesture(index)}
+                          dragGesture={createDragGesture(isVirtualized ? startIndex + index : index)}
                           onEventPress={(event) => {
                             lightImpact();
                             onEventPress?.(event);
@@ -441,6 +487,11 @@ const MultiResourceTimeline = forwardRef<MultiResourceTimelineRef, MultiResource
                           workingSlots={getWorkingHoursForResource(resource.id)}
                         />
                       ))}
+                      
+                      {/* Right offset for virtualization */}
+                      {isVirtualized && offsetRight > 0 && (
+                        <View style={{ width: offsetRight }} />
+                      )}
                     </View>
                   </GestureScrollView>
                   

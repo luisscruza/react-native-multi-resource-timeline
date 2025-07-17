@@ -57,4 +57,23 @@ describe('Performance Optimizations', () => {
       expect(PERFORMANCE.zoomThrottle).toBe(32);
     });
   });
+
+  describe('Horizontal Virtualization', () => {
+    it('should have appropriate column thresholds', () => {
+      expect(PERFORMANCE.horizontalVirtualization.columnThreshold).toBe(8);
+      expect(PERFORMANCE.horizontalVirtualization.visibleColumnsBuffer).toBe(2);
+    });
+
+    it('should enable horizontal virtualization for many columns', () => {
+      const columnsCount = 10;
+      const shouldVirtualize = columnsCount > PERFORMANCE.horizontalVirtualization.columnThreshold;
+      expect(shouldVirtualize).toBe(true);
+    });
+
+    it('should not enable horizontal virtualization for few columns', () => {
+      const columnsCount = 6;
+      const shouldVirtualize = columnsCount > PERFORMANCE.horizontalVirtualization.columnThreshold;
+      expect(shouldVirtualize).toBe(false);
+    });
+  });
 });

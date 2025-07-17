@@ -51,6 +51,18 @@ This document outlines the performance optimizations implemented to improve rend
 - Reduced JavaScript bridge calls during gesture handling
 - Optimized pinch gesture direction detection
 
+### 7. Horizontal Scrolling Performance Optimization
+**Problem**: Horizontal scrolling felt laggy on real devices, especially with multiple columns.
+
+**Solution**:
+- Added native ScrollView performance optimizations:
+  - `removeClippedSubviews={true}` - removes views outside viewport
+  - `decelerationRate="fast"` - improves scroll feel on real devices  
+  - `directionalLockEnabled={true}` - prevents diagonal scrolling interference
+- Optimized scroll sync mechanism with frame-based updates instead of timeouts
+- Implemented horizontal virtualization for scenarios with 8+ columns
+- Enhanced ResourceColumn memoization for better performance during scrolling
+
 ## Performance Metrics
 
 These optimizations specifically target the reported issue of "Working with 6 employees (6 column) feels slow in the iOS simulator".
@@ -64,6 +76,8 @@ These optimizations specifically target the reported issue of "Working with 6 em
 - Shared animated state with minimal style objects
 - Intelligent memoization preventing unnecessary re-renders  
 - Virtual scrolling activated for 6-column scenarios with 20+ events
+- Horizontal virtualization for 8+ column scenarios to reduce DOM nodes
+- Native ScrollView optimizations for smooth horizontal scrolling on real devices
 - Throttled gesture handling reducing JavaScript bridge calls
 - Memory leak prevention with proper cleanup patterns
 - Reduced memory allocations and improved scroll performance

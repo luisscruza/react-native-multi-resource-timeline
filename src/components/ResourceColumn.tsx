@@ -227,8 +227,29 @@ const ResourceColumnComponent: React.FC<ResourceColumnProps> = ({
   );
 };
 
-// Custom comparison function to optimize re-renders
+// Enhanced comparison function to optimize re-renders, especially during horizontal scrolling
 const arePropsEqual = (prevProps: ResourceColumnProps, nextProps: ResourceColumnProps) => {
+  // Fast path: check if it's the same resource instance
+  if (prevProps.resource === nextProps.resource && 
+      prevProps.resourceIndex === nextProps.resourceIndex &&
+      prevProps.width === nextProps.width &&
+      prevProps.slotHeight === nextProps.slotHeight) {
+    
+    // Check only critical state that affects rendering
+    const prevSelected = prevProps.selectedTimeSlot?.resourceId === prevProps.resource.id;
+    const nextSelected = nextProps.selectedTimeSlot?.resourceId === nextProps.resource.id;
+    const prevDragForThisResource = prevProps.dragSelection?.resourceId === prevProps.resource.id;
+    const nextDragForThisResource = nextProps.dragSelection?.resourceId === nextProps.resource.id;
+    
+    // If no selection states apply to this resource, skip expensive event comparison
+    if (!prevSelected && !nextSelected && !prevDragForThisResource && !nextDragForThisResource) {
+      // Only check if events array reference changed (shallow comparison)
+      return prevProps.events === nextProps.events && 
+             prevProps.timeSlots === nextProps.timeSlots;
+    }
+  }
+  
+  // Full comparison for resources that might need updates
   // Check if resource changed (deep comparison)
   if (prevProps.resource.id !== nextProps.resource.id ||
       prevProps.resource.name !== nextProps.resource.name ||
