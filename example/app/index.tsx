@@ -27,6 +27,20 @@ const resources = [
     workingHours: {
       '2025-07-15': ['07:00-19:00'],
     }
+  },
+  {
+    id: 'room2',
+    name: 'Room B (No Working Hours)',
+    color: '#9C27B0',
+    // No working hours defined - should show all slots as non-working
+  },
+  {
+    id: 'room3',
+    name: 'Room C (Empty Working Hours)',
+    color: '#607D8B',
+    workingHours: {
+      '2025-07-15': [], // Empty working hours array
+    }
   }
 ];
 
