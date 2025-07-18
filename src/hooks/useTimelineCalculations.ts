@@ -10,6 +10,7 @@ interface UseTimelineCalculationsProps {
   startHour: number;
   endHour: number;
   timeSlotInterval: number;
+  selectionGranularity?: number;
   hourHeight: number;
   date: string;
 }
@@ -23,9 +24,13 @@ export const useTimelineCalculations = ({
   startHour,
   endHour,
   timeSlotInterval,
+  selectionGranularity,
   hourHeight,
   date,
 }: UseTimelineCalculationsProps) => {
+  // Use selection granularity for calculations if provided, otherwise fall back to timeSlotInterval
+  const effectiveGranularity = selectionGranularity || timeSlotInterval;
+  
   // Memoized calculations
   const timeSlots = useMemo(() => {
     const slotsPerHour = 60 / timeSlotInterval;
@@ -39,9 +44,27 @@ export const useTimelineCalculations = ({
     });
   }, [startHour, endHour, timeSlotInterval]);
 
+  // Calculate selection slots for drag operations (based on granularity)
+  const selectionSlots = useMemo(() => {
+    const slotsPerHour = 60 / effectiveGranularity;
+    const totalSlots = (endHour - startHour) * slotsPerHour;
+    
+    return Array.from({ length: totalSlots }, (_, i) => {
+      const totalMinutes = startHour * 60 + i * effectiveGranularity;
+      const hours = Math.floor(totalMinutes / 60);
+      const minutes = totalMinutes % 60;
+      return { hours, minutes, index: i };
+    });
+  }, [startHour, endHour, effectiveGranularity]);
+
   const slotHeight = useMemo(() => {
     return hourHeight / (60 / timeSlotInterval);
   }, [hourHeight, timeSlotInterval]);
+
+  // Calculate selection height based on granularity
+  const selectionHeight = useMemo(() => {
+    return hourHeight / (60 / effectiveGranularity);
+  }, [hourHeight, effectiveGranularity]);
 
   const formatTimeSlot = useCallback((hours: number, minutes: number, format24h: boolean = true, showMinutes: boolean = true) => {
     if (format24h) {
@@ -74,7 +97,9 @@ export const useTimelineCalculations = ({
 
   return {
     timeSlots,
+    selectionSlots,
     slotHeight,
+    selectionHeight,
     formatTimeSlot,
     getCurrentTimePosition,
   };

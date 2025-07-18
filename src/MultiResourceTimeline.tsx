@@ -57,6 +57,7 @@ const MultiResourceTimeline = forwardRef<MultiResourceTimelineRef, MultiResource
   showNowIndicator = false,
   format24h = true,
   timeSlotInterval = 60,
+  selectionGranularity,
   resourcesPerPage = 2,
   theme: themeProp = 'light',
   enableHaptics = true,
@@ -102,10 +103,11 @@ const MultiResourceTimeline = forwardRef<MultiResourceTimelineRef, MultiResource
   } = useTimelineZoom(hourHeight, eventMinHeight, dynamicColumnWidth * 1.1);
 
   // Enhanced hooks
-  const { timeSlots, slotHeight, formatTimeSlot, getCurrentTimePosition } = useTimelineCalculations({
+  const { timeSlots, selectionSlots, slotHeight, selectionHeight, formatTimeSlot, getCurrentTimePosition } = useTimelineCalculations({
     startHour,
     endHour,
     timeSlotInterval,
+    selectionGranularity,
     hourHeight: currentHourHeight,
     date,
   });
@@ -167,7 +169,9 @@ const MultiResourceTimeline = forwardRef<MultiResourceTimelineRef, MultiResource
     isZooming,
   } = useTimelineGestures({
     slotHeight,
+    selectionHeight,
     timeSlots,
+    selectionSlots,
     resources,
     currentDragSelection,
     startDragSelection: handleDragStart,
@@ -189,7 +193,7 @@ const MultiResourceTimeline = forwardRef<MultiResourceTimelineRef, MultiResource
     clearSelection: clearKeyboardSelection,
   } = useKeyboardNavigation({
     resources,
-    timeSlots,
+    timeSlots: selectionSlots, // Use selection slots for keyboard navigation
     onTimeSlotSelect: (resourceId, startSlot, endSlot) => {
       successFeedback();
       onTimeSlotSelect?.(resourceId, startSlot, endSlot);
@@ -476,6 +480,7 @@ const MultiResourceTimeline = forwardRef<MultiResourceTimelineRef, MultiResource
                           events={filteredEvents}
                           timeSlots={isVirtualScrollEnabled ? visibleTimeSlots.map(v => timeSlots[v.index]) : timeSlots}
                           slotHeight={slotHeight}
+                          selectionHeight={selectionHeight}
                           width={currentColumnWidth}
                           date={date}
                           startHour={startHour}

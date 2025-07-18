@@ -5,6 +5,7 @@ import { DragSelection, DragSelectionOverlayStyle, TimelineTheme } from '../type
 interface DragSelectionOverlayProps {
   dragSelection: DragSelection | null;
   slotHeight: number;
+  selectionHeight: number;
   width: number;
   theme: TimelineTheme;
   resourceId: string;
@@ -14,6 +15,7 @@ interface DragSelectionOverlayProps {
 const DragSelectionOverlay: React.FC<DragSelectionOverlayProps> = ({
   dragSelection,
   slotHeight,
+  selectionHeight,
   width,
   theme,
   resourceId,
@@ -42,8 +44,9 @@ const DragSelectionOverlay: React.FC<DragSelectionOverlayProps> = ({
 
     const startSlot = Math.min(dragSelection.startSlot, dragSelection.endSlot);
     const endSlot = Math.max(dragSelection.startSlot, dragSelection.endSlot);
-    const selectionHeight = (endSlot - startSlot + 1) * slotHeight;
-    const topPosition = startSlot * slotHeight;
+    // Use selection height for more granular overlay positioning
+    const selectionAreaHeight = (endSlot - startSlot + 1) * selectionHeight;
+    const topPosition = startSlot * selectionHeight;
 
     // Merge custom styles with defaults
     const defaultBackgroundColor = '#E8F5E8';
@@ -53,7 +56,7 @@ const DragSelectionOverlay: React.FC<DragSelectionOverlayProps> = ({
 
     return {
       opacity: opacity.value,
-      height: selectionHeight,
+      height: selectionAreaHeight,
       top: topPosition,
       backgroundColor: withTiming(overlayStyle?.backgroundColor ?? defaultBackgroundColor, {
         duration: 200,
