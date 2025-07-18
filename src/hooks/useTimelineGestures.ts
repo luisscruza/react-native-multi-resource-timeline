@@ -5,7 +5,9 @@ import { ZOOM_LIMITS, PERFORMANCE } from '../constants';
 
 interface UseTimelineGesturesProps {
   slotHeight: number;
+  selectionHeight: number;
   timeSlots: any[];
+  selectionSlots: any[];
   resources: any[];
   currentDragSelection: any;
   startDragSelection: (resourceId: string, slotIndex: number) => void;
@@ -20,7 +22,9 @@ interface UseTimelineGesturesProps {
 
 export const useTimelineGestures = ({
   slotHeight,
+  selectionHeight,
   timeSlots,
+  selectionSlots,
   resources,
   currentDragSelection,
   startDragSelection,
@@ -129,16 +133,18 @@ export const useTimelineGestures = ({
         'worklet';
         isDragActive.value = true;
         
-        const slotIndex = Math.floor(event.y / slotHeight);
-        const clampedSlotIndex = Math.max(0, Math.min(slotIndex, timeSlots.length - 1));
+        // Use selection height for more granular drag calculations
+        const selectionSlotIndex = Math.floor(event.y / selectionHeight);
+        const clampedSlotIndex = Math.max(0, Math.min(selectionSlotIndex, selectionSlots.length - 1));
         const resource = resources[resourceIndex];
         
         runOnJS(startDragSelection)(resource.id, clampedSlotIndex);
       })
       .onUpdate((event) => {
         'worklet';
-        const slotIndex = Math.floor(event.y / slotHeight);
-        const clampedSlotIndex = Math.max(0, Math.min(slotIndex, timeSlots.length - 1));
+        // Use selection height for more granular drag calculations
+        const selectionSlotIndex = Math.floor(event.y / selectionHeight);
+        const clampedSlotIndex = Math.max(0, Math.min(selectionSlotIndex, selectionSlots.length - 1));
         
         runOnJS(updateDragSelection)(clampedSlotIndex);
       })
@@ -152,7 +158,7 @@ export const useTimelineGestures = ({
         isDragActive.value = false;
       })
       .blocksExternalGesture(scrollGesture);
-  }, [slotHeight, timeSlots.length, resources, startDragSelection, updateDragSelection, completeDragSelection, scrollGesture]);
+  }, [selectionHeight, selectionSlots.length, resources, startDragSelection, updateDragSelection, completeDragSelection, scrollGesture]);
 
   return {
     pinchHandler,

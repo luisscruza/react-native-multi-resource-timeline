@@ -5,6 +5,8 @@
  * working hours are not defined for a resource on a specific date.
  */
 
+/* eslint-env jest */
+
 import { getResourceWorkingHours } from '../utils/workingHoursParser';
 
 describe('Working Hours Background', () => {
