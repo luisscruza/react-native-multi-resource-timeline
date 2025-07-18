@@ -489,7 +489,7 @@ const MultiResourceTimeline = forwardRef<MultiResourceTimelineRef, MultiResource
                             onEventPress?.(event);
                           }}
                           theme={theme}
-                          showWorkingHoursBackground={showWorkingHoursBackground && hasWorkingHours}
+                          showWorkingHoursBackground={showWorkingHoursBackground}
                           workingHoursStyle={workingHoursStyle}
                           workingSlots={getWorkingHoursForResource(resource.id)}
                           dragSelectionOverlayStyle={dragSelectionOverlayStyle}

@@ -156,7 +156,7 @@ const ResourceColumnComponent: React.FC<ResourceColumnProps> = ({
       <GestureDetector gesture={dragGesture}>
         <Animated.View style={[styles.timelineArea, { height: timeSlots.length * slotHeight }]}>
           {/* Working Hours Background */}
-          {showWorkingHoursBackground && workingSlots && (
+          {showWorkingHoursBackground && (
             <WorkingHoursBackground
               workingSlots={workingSlots}
               slotHeight={slotHeight}

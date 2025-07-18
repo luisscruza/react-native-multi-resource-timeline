@@ -4,7 +4,7 @@ import { TimelineTheme, WorkingHoursStyle } from '../types';
 import { WorkingSlots } from '../utils/workingHoursParser';
 
 interface WorkingHoursBackgroundProps {
-  workingSlots: WorkingSlots;
+  workingSlots?: WorkingSlots;
   slotHeight: number;
   theme: TimelineTheme;
   style?: WorkingHoursStyle;
@@ -20,11 +20,14 @@ const WorkingHoursBackground = memo<WorkingHoursBackgroundProps>(({
   width,
   totalSlots
 }) => {
-  const { isWorking } = workingSlots;
+  const { isWorking } = workingSlots || { isWorking: [] };
+  
+  // If no working slots defined, create array with all non-working slots
+  const slots = isWorking.length > 0 ? isWorking : new Array(totalSlots).fill(false);
 
   // Use custom style or fallback to theme
   const workingBackground = style?.workingBackground || theme.colors.workingHours.working;
-  const nonWorkingColor = theme.colors.text.secondary;
+  const nonWorkingBackground = style?.nonWorkingBackground || '#8E8E8E';
 
   return (
     <View 
@@ -39,7 +42,7 @@ const WorkingHoursBackground = memo<WorkingHoursBackgroundProps>(({
       pointerEvents="none" // Allow touches to pass through
     >
       {/* Render working/non-working slots */}
-      {isWorking.map((working, slotIndex) => {
+      {slots.map((working, slotIndex) => {
         if (working) {
           // Working hours - subtle green background
           return (
@@ -57,7 +60,7 @@ const WorkingHoursBackground = memo<WorkingHoursBackgroundProps>(({
             />
           );
         } else {
-          // Non-working hours - plain gray background
+          // Non-working hours - use custom style or fallback
           return (
             <View
               key={`non-working-slot-${slotIndex}`}
@@ -67,7 +70,7 @@ const WorkingHoursBackground = memo<WorkingHoursBackgroundProps>(({
                 width: '100%',
                 top: slotIndex * slotHeight,
                 height: slotHeight,
-                backgroundColor: '#8E8E8E',
+                backgroundColor: nonWorkingBackground,
                 opacity: style?.nonWorkingOpacity || 0.12,
                 borderBottomWidth: 1,
                   borderBottomColor: '#ccc', // or your preferred color
