@@ -64,6 +64,7 @@ const MultiResourceTimeline = forwardRef<MultiResourceTimelineRef, MultiResource
   workingHoursStyle,
   clearSelectionAfterDrag = true,
   dragSelectionOverlayStyle,
+  enableSingleTapSelection = false,
   onEventPress,
   onTimeSlotSelect,
   onLoadingChange,
@@ -160,10 +161,19 @@ const MultiResourceTimeline = forwardRef<MultiResourceTimelineRef, MultiResource
     });
   };
 
+  const handleSingleTapSelection = (resourceId: string, slotIndex: number) => {
+    lightImpact();
+    successFeedback();
+    // For single tap, startSlot and endSlot are the same
+    onTimeSlotSelect?.(resourceId, slotIndex, slotIndex);
+  };
+
   const {
     pinchHandler,
     scrollGesture,
     createDragGesture,
+    createTapGesture,
+    createCombinedGesture,
     isZooming,
   } = useTimelineGestures({
     slotHeight,
@@ -178,6 +188,8 @@ const MultiResourceTimeline = forwardRef<MultiResourceTimelineRef, MultiResource
     handleVerticalZoomChange,
     handleHorizontalZoomChange,
     disableHorizontalZoom: resources.length === 1,
+    enableSingleTapSelection,
+    onSingleTapSelection: handleSingleTapSelection,
   });
 
   // Keyboard navigation
@@ -483,7 +495,7 @@ const MultiResourceTimeline = forwardRef<MultiResourceTimelineRef, MultiResource
                           eventMinHeight={currentEventMinHeight}
                           selectedTimeSlot={selectedTimeSlot}
                           dragSelection={dragSelection}
-                          dragGesture={createDragGesture(isVirtualized ? startIndex + index : index)}
+                          dragGesture={createCombinedGesture(isVirtualized ? startIndex + index : index)}
                           onEventPress={(event) => {
                             lightImpact();
                             onEventPress?.(event);
