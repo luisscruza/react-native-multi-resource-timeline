@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { SafeAreaView, StatusBar, StyleSheet, View } from 'react-native';
+import { SafeAreaView, StatusBar, StyleSheet, View, Text, TouchableOpacity } from 'react-native';
 import { MultiResourceTimeline } from 'react-native-multi-resource-timeline';
 
 // Example data
@@ -76,6 +76,7 @@ const events = [
 
 export default function HomeScreen() {
   const [selectedDate] = useState('2025-07-15');
+  const [enableSingleTap, setEnableSingleTap] = useState(true);
 
   const handleEventPress = (event: any) => {
     console.log('Event pressed:', event);
@@ -83,11 +84,31 @@ export default function HomeScreen() {
 
   const handleTimeSlotSelect = (resourceId: string, startSlot: number, endSlot: number) => {
     console.log('Time slot selected:', resourceId, startSlot, endSlot);
+    if (startSlot === endSlot) {
+      console.log('Single tap selection - slot:', startSlot);
+    } else {
+      console.log('Long press drag selection - from:', startSlot, 'to:', endSlot);
+    }
   };
 
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" />
+      <View style={styles.controls}>
+        <TouchableOpacity
+          style={[styles.button, enableSingleTap ? styles.buttonActive : styles.buttonInactive]}
+          onPress={() => setEnableSingleTap(!enableSingleTap)}
+        >
+          <Text style={styles.buttonText}>
+            {enableSingleTap ? 'Single Tap: ON' : 'Single Tap: OFF'}
+          </Text>
+        </TouchableOpacity>
+        <Text style={styles.helpText}>
+          {enableSingleTap 
+            ? 'Tap once to select a slot, or long press + drag for range selection' 
+            : 'Long press + drag to select a time range'}
+        </Text>
+      </View>
       <View style={styles.timeline}>
         <MultiResourceTimeline
           resources={resources}
@@ -100,6 +121,7 @@ export default function HomeScreen() {
           showWorkingHoursBackground={true}
           enableHaptics={true}
           theme="light"
+          enableSingleTapSelection={enableSingleTap}
           onEventPress={handleEventPress}
           onTimeSlotSelect={handleTimeSlotSelect}
           workingHoursStyle={{
@@ -122,6 +144,33 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#fff',
+  },
+  controls: {
+    padding: 16,
+    backgroundColor: '#f5f5f5',
+    alignItems: 'center',
+  },
+  button: {
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 8,
+    marginBottom: 8,
+  },
+  buttonActive: {
+    backgroundColor: '#2196F3',
+  },
+  buttonInactive: {
+    backgroundColor: '#999',
+  },
+  buttonText: {
+    color: 'white',
+    fontWeight: 'bold',
+    fontSize: 14,
+  },
+  helpText: {
+    fontSize: 12,
+    color: '#666',
+    textAlign: 'center',
   },
   timeline: {
     flex: 1,
