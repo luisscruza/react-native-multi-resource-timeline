@@ -64,6 +64,7 @@ const MultiResourceTimeline = forwardRef<MultiResourceTimelineRef, MultiResource
   workingHoursStyle,
   clearSelectionAfterDrag = true,
   dragSelectionOverlayStyle,
+  onLoading,
   onEventPress,
   onTimeSlotSelect,
   onLoadingChange,
@@ -72,13 +73,16 @@ const MultiResourceTimeline = forwardRef<MultiResourceTimelineRef, MultiResource
   
   // State management
   const [currentPage, setCurrentPage] = useState(0);
-  const [isLoading, setIsLoading] = useState(true);
+  const [internalIsLoading, setInternalIsLoading] = useState(true);
   const [isVirtualScrollEnabled, setIsVirtualScrollEnabled] = useState(
     // Use optimized thresholds for better performance with multiple columns
     events.length > PERFORMANCE.virtualScrollThresholds.events || 
     (events.length > PERFORMANCE.virtualScrollThresholds.eventsWithMultipleColumns && 
      resources.length > PERFORMANCE.virtualScrollThresholds.columnsThreshold)
   );
+
+  // Use external loading prop if provided, otherwise use internal state
+  const isLoading = onLoading !== undefined ? onLoading : internalIsLoading;
 
   // Theme
   const theme: TimelineTheme = useMemo(() => getTheme(themeProp), [themeProp]);
@@ -308,6 +312,11 @@ const MultiResourceTimeline = forwardRef<MultiResourceTimelineRef, MultiResource
 
   // Effects with proper cleanup to prevent memory leaks
   useEffect(() => {
+    // Only manage internal loading state when onLoading prop is not provided
+    if (onLoading !== undefined) {
+      return;
+    }
+
     let mounted = true;
     
     loadingProgress.value = withTiming(1, {
@@ -317,7 +326,7 @@ const MultiResourceTimeline = forwardRef<MultiResourceTimelineRef, MultiResource
     
     const timer = setTimeout(() => {
       if (mounted) {
-        setIsLoading(false);
+        setInternalIsLoading(false);
         onLoadingChange?.(false);
         if (enableHaptics) {
           lightImpact();
@@ -329,7 +338,14 @@ const MultiResourceTimeline = forwardRef<MultiResourceTimelineRef, MultiResource
       mounted = false;
       clearTimeout(timer);
     };
-  }, [loadingProgress, onLoadingChange, enableHaptics, lightImpact]);
+  }, [loadingProgress, onLoadingChange, enableHaptics, lightImpact, onLoading]);
+
+  // Notify about external loading state changes
+  useEffect(() => {
+    if (onLoading !== undefined) {
+      onLoadingChange?.(onLoading);
+    }
+  }, [onLoading, onLoadingChange]);
 
   // Update now indicator periodically with cleanup
   useEffect(() => {
