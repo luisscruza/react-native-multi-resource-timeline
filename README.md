@@ -126,6 +126,7 @@ export default App;
 | `workingHoursStyle` | `WorkingHoursStyle` | `undefined` | Working hours styling |
 | `clearSelectionAfterDrag` | `boolean` | `true` | Auto-clear selection after drag completion |
 | `dragSelectionOverlayStyle` | `DragSelectionOverlayStyle` | `undefined` | Custom styling for drag selection overlay |
+| `onLoading` | `boolean` | `undefined` | External control of loading state |
 | `onEventPress` | `(event: MultiResourceEvent) => void` | `undefined` | Event press handler |
 | `onTimeSlotSelect` | `(resourceId: string, startSlot: number, endSlot: number) => void` | `undefined` | Time slot selection handler |
 | `onLoadingChange` | `(isLoading: boolean) => void` | `undefined` | Loading state change handler |
@@ -176,6 +177,44 @@ interface DragSelectionOverlayStyle {
 ```
 
 ## Advanced Usage
+
+### External Loading Control
+
+Control the timeline's loading state externally using the `onLoading` prop:
+
+```tsx
+import React, { useState } from 'react';
+import { MultiResourceTimeline } from 'react-native-multi-resource-timeline';
+
+const App = () => {
+  const [isLoading, setIsLoading] = useState(false);
+  const [events, setEvents] = useState([]);
+
+  const loadEvents = async () => {
+    setIsLoading(true);
+    try {
+      const newEvents = await fetchEventsFromAPI();
+      setEvents(newEvents);
+    } catch (error) {
+      console.error('Failed to load events:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <MultiResourceTimeline
+      resources={resources}
+      events={events}
+      date="2025-07-15"
+      onLoading={isLoading}
+      onLoadingChange={(loading) => {
+        console.log('Loading state changed:', loading);
+      }}
+    />
+  );
+};
+```
 
 ### Working Hours
 
