@@ -64,7 +64,7 @@ const MultiResourceTimeline = forwardRef<MultiResourceTimelineRef, MultiResource
   workingHoursStyle,
   clearSelectionAfterDrag = true,
   dragSelectionOverlayStyle,
-  onLoading,
+  isLoading,
   onEventPress,
   onTimeSlotSelect,
   onLoadingChange,
@@ -82,7 +82,7 @@ const MultiResourceTimeline = forwardRef<MultiResourceTimelineRef, MultiResource
   );
 
   // Use external loading prop if provided, otherwise use internal state
-  const isLoading = onLoading !== undefined ? onLoading : internalIsLoading;
+  const isLoadingState = isLoading !== undefined ? isLoading : internalIsLoading;
 
   // Theme
   const theme: TimelineTheme = useMemo(() => getTheme(themeProp), [themeProp]);
@@ -312,8 +312,8 @@ const MultiResourceTimeline = forwardRef<MultiResourceTimelineRef, MultiResource
 
   // Effects with proper cleanup to prevent memory leaks
   useEffect(() => {
-    // Only manage internal loading state when onLoading prop is not provided
-    if (onLoading !== undefined) {
+    // Only manage internal loading state when isLoading prop is not provided
+    if (isLoading !== undefined) {
       return;
     }
 
@@ -338,14 +338,14 @@ const MultiResourceTimeline = forwardRef<MultiResourceTimelineRef, MultiResource
       mounted = false;
       clearTimeout(timer);
     };
-  }, [loadingProgress, onLoadingChange, enableHaptics, lightImpact, onLoading]);
+  }, [loadingProgress, onLoadingChange, enableHaptics, lightImpact, isLoading]);
 
   // Notify about external loading state changes
   useEffect(() => {
-    if (onLoading !== undefined) {
-      onLoadingChange?.(onLoading);
+    if (isLoading !== undefined) {
+      onLoadingChange?.(isLoading);
     }
-  }, [onLoading, onLoadingChange]);
+  }, [isLoading, onLoadingChange]);
 
   // Update now indicator periodically with cleanup
   useEffect(() => {
@@ -383,7 +383,7 @@ const MultiResourceTimeline = forwardRef<MultiResourceTimelineRef, MultiResource
   }, [resources, startHour, endHour, onError, errorFeedback]);
 
   // Show loading skeleton
-  if (isLoading) {
+  if (isLoadingState) {
     return (
       <SkeletonLoader
         theme={theme}

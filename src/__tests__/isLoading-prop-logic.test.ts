@@ -1,7 +1,7 @@
 /**
- * onLoading Prop Tests
+ * isLoading Prop Tests
  * 
- * Tests to ensure the onLoading prop allows external control of the timeline's loading state.
+ * Tests to ensure the isLoading prop allows external control of the timeline's loading state.
  * @jest-environment node
  */
 
@@ -10,7 +10,7 @@
 import React from 'react';
 import { MultiResourceTimelineProps } from '../types';
 
-describe('onLoading Prop', () => {
+describe('isLoading Prop', () => {
   const mockResources = [
     {
       id: 'resource1',
@@ -34,58 +34,58 @@ describe('onLoading Prop', () => {
     }
   ];
 
-  describe('onLoading Prop Type Definition', () => {
-    it('should accept boolean onLoading prop', () => {
+  describe('isLoading Prop Type Definition', () => {
+    it('should accept boolean isLoading prop', () => {
       const props: MultiResourceTimelineProps = {
         events: mockEvents,
         resources: mockResources,
         date: '2025-01-15',
-        onLoading: true,
+        isLoading: true,
       };
       
-      expect(props.onLoading).toBe(true);
-      expect(typeof props.onLoading).toBe('boolean');
+      expect(props.isLoading).toBe(true);
+      expect(typeof props.isLoading).toBe('boolean');
     });
 
-    it('should accept undefined onLoading prop', () => {
+    it('should accept undefined isLoading prop', () => {
       const props: MultiResourceTimelineProps = {
         events: mockEvents,
         resources: mockResources,
         date: '2025-01-15',
-        onLoading: undefined,
+        isLoading: undefined,
       };
       
-      expect(props.onLoading).toBeUndefined();
+      expect(props.isLoading).toBeUndefined();
     });
 
-    it('should work without onLoading prop', () => {
+    it('should work without isLoading prop', () => {
       const props: MultiResourceTimelineProps = {
         events: mockEvents,
         resources: mockResources,
         date: '2025-01-15',
       };
       
-      expect(props.onLoading).toBeUndefined();
+      expect(props.isLoading).toBeUndefined();
     });
   });
 
   describe('Loading State Logic', () => {
-    it('should determine loading state correctly when onLoading is provided', () => {
-      // Test logic: when onLoading is provided, use it directly
-      const externalOnLoading = true;
+    it('should determine loading state correctly when isLoading is provided', () => {
+      // Test logic: when isLoading is provided, use it directly
+      const externalIsLoading = true;
       const internalIsLoading = false;
       
-      const actualLoading = externalOnLoading !== undefined ? externalOnLoading : internalIsLoading;
+      const actualLoading = externalIsLoading !== undefined ? externalIsLoading : internalIsLoading;
       
       expect(actualLoading).toBe(true);
     });
 
-    it('should fall back to internal loading when onLoading is undefined', () => {
-      // Test logic: when onLoading is undefined, use internal state
-      const externalOnLoading = undefined;
+    it('should fall back to internal loading when isLoading is undefined', () => {
+      // Test logic: when isLoading is undefined, use internal state
+      const externalIsLoading = undefined;
       const internalIsLoading = false;
       
-      const actualLoading = externalOnLoading !== undefined ? externalOnLoading : internalIsLoading;
+      const actualLoading = externalIsLoading !== undefined ? externalIsLoading : internalIsLoading;
       
       expect(actualLoading).toBe(false);
     });
@@ -107,21 +107,21 @@ describe('onLoading Prop', () => {
   });
 
   describe('Props Interface Validation', () => {
-    it('should include onLoading in MultiResourceTimelineProps interface', () => {
+    it('should include isLoading in MultiResourceTimelineProps interface', () => {
       // This test ensures the TypeScript interface is correct
-      const propsWithOnLoading: MultiResourceTimelineProps = {
+      const propsWithIsLoading: MultiResourceTimelineProps = {
         events: mockEvents,
         resources: mockResources,
         date: '2025-01-15',
-        onLoading: true,
+        isLoading: true,
         onLoadingChange: jest.fn(),
       };
 
-      expect(propsWithOnLoading).toHaveProperty('onLoading');
-      expect(propsWithOnLoading.onLoading).toBe(true);
+      expect(propsWithIsLoading).toHaveProperty('isLoading');
+      expect(propsWithIsLoading.isLoading).toBe(true);
     });
 
-    it('should work with all existing props plus onLoading', () => {
+    it('should work with all existing props plus isLoading', () => {
       const fullProps: MultiResourceTimelineProps = {
         events: mockEvents,
         resources: mockResources,
@@ -138,15 +138,15 @@ describe('onLoading Prop', () => {
         enableHaptics: true,
         showWorkingHoursBackground: false,
         clearSelectionAfterDrag: true,
-        onLoading: false, // New prop
+        isLoading: false, // New prop
         onEventPress: jest.fn(),
         onTimeSlotSelect: jest.fn(),
         onLoadingChange: jest.fn(),
         onError: jest.fn(),
       };
 
-      expect(fullProps.onLoading).toBe(false);
-      expect(typeof fullProps.onLoading).toBe('boolean');
+      expect(fullProps.isLoading).toBe(false);
+      expect(typeof fullProps.isLoading).toBe('boolean');
     });
   });
 
@@ -155,28 +155,28 @@ describe('onLoading Prop', () => {
       const onLoadingChangeMock = jest.fn();
       
       // Simulate the effect logic
-      const onLoading = true;
-      if (onLoading !== undefined) {
-        onLoadingChangeMock(onLoading);
+      const isLoading = true;
+      if (isLoading !== undefined) {
+        onLoadingChangeMock(isLoading);
       }
 
       expect(onLoadingChangeMock).toHaveBeenCalledWith(true);
       expect(onLoadingChangeMock).toHaveBeenCalledTimes(1);
     });
 
-    it('should not call onLoadingChange during internal loading setup when external onLoading is provided', () => {
+    it('should not call onLoadingChange during internal loading setup when external isLoading is provided', () => {
       const onLoadingChangeMock = jest.fn();
       
-      // Simulate the effect logic - when onLoading is provided, internal effect should not run
-      const onLoading = false;
+      // Simulate the effect logic - when isLoading is provided, internal effect should not run
+      const isLoading = false;
       
       // Internal loading effect should not execute
-      if (onLoading === undefined) {
+      if (isLoading === undefined) {
         // This should not execute
         onLoadingChangeMock(false);
       } else {
         // External loading notification
-        onLoadingChangeMock(onLoading);
+        onLoadingChangeMock(isLoading);
       }
 
       expect(onLoadingChangeMock).toHaveBeenCalledWith(false);

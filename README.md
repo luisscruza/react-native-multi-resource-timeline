@@ -126,7 +126,7 @@ export default App;
 | `workingHoursStyle` | `WorkingHoursStyle` | `undefined` | Working hours styling |
 | `clearSelectionAfterDrag` | `boolean` | `true` | Auto-clear selection after drag completion |
 | `dragSelectionOverlayStyle` | `DragSelectionOverlayStyle` | `undefined` | Custom styling for drag selection overlay |
-| `onLoading` | `boolean` | `undefined` | External control of loading state |
+| `isLoading` | `boolean` | `undefined` | External control of loading state |
 | `onEventPress` | `(event: MultiResourceEvent) => void` | `undefined` | Event press handler |
 | `onTimeSlotSelect` | `(resourceId: string, startSlot: number, endSlot: number) => void` | `undefined` | Time slot selection handler |
 | `onLoadingChange` | `(isLoading: boolean) => void` | `undefined` | Loading state change handler |
@@ -180,7 +180,7 @@ interface DragSelectionOverlayStyle {
 
 ### External Loading Control
 
-Control the timeline's loading state externally using the `onLoading` prop:
+Control the timeline's loading state externally using the `isLoading` prop:
 
 ```tsx
 import React, { useState } from 'react';
@@ -207,7 +207,7 @@ const App = () => {
       resources={resources}
       events={events}
       date="2025-07-15"
-      onLoading={isLoading}
+      isLoading={isLoading}
       onLoadingChange={(loading) => {
         console.log('Loading state changed:', loading);
       }}

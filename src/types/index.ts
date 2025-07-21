@@ -106,7 +106,7 @@ export interface MultiResourceTimelineProps {
   workingHoursStyle?: WorkingHoursStyle;
   clearSelectionAfterDrag?: boolean;
   dragSelectionOverlayStyle?: DragSelectionOverlayStyle;
-  onLoading?: boolean;
+  isLoading?: boolean;
   onEventPress?: (event: MultiResourceEvent) => void;
   onTimeSlotSelect?: (resourceId: string, startSlot: number, endSlot: number) => void;
   onLoadingChange?: (isLoading: boolean) => void;
