@@ -1,4 +1,4 @@
-import React, { forwardRef, useEffect, useImperativeHandle, useMemo, useState } from 'react';
+import React, { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useState } from 'react';
 import { Dimensions, ScrollView, View } from 'react-native';
 import { CalendarUtils } from 'react-native-calendars';
 import {
