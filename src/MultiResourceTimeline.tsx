@@ -163,7 +163,8 @@ const MultiResourceTimeline = forwardRef<MultiResourceTimelineRef, MultiResource
       },
       selectionSlots,
       timeSlotInterval,
-      startHour
+      startHour,
+      selectionGranularity
     );
   };
 

@@ -65,7 +65,8 @@ export const useTimelineSelection = (clearAfterDrag: boolean = true) => {
     onComplete?: (resourceId: string, startSlot: number, endSlot: number) => void,
     selectionSlots?: Array<{ hours: number; minutes: number; index: number }>,
     timeSlotInterval?: number,
-    startHour?: number
+    startHour?: number,
+    selectionGranularity?: number
   ) => {
     const dragData = dragSelection || currentDragSelection.value;
     
@@ -77,12 +78,13 @@ export const useTimelineSelection = (clearAfterDrag: boolean = true) => {
       setIsDragging(false);
       
       // If we have selection slots context, convert to time-based indices
-      if (selectionSlots && timeSlotInterval && startHour !== undefined) {
+      if (selectionSlots && timeSlotInterval && startHour !== undefined && selectionGranularity !== undefined) {
         const convertedIndices = convertSelectionSlotsToTimeSlots(
           normalizedStartSlot,
           normalizedEndSlot,
           selectionSlots,
           timeSlotInterval,
+          selectionGranularity,
           startHour
         );
         
@@ -119,14 +121,14 @@ export const useTimelineSelection = (clearAfterDrag: boolean = true) => {
 
 /**
  * Converts selection slot indices to consumer-compatible indices 
- * This fixes the issue where consumers have hardcoded 30-minute assumptions
- * regardless of the actual timeSlotInterval
+ * Returns indices that represent the actual selected times in terms of selectionGranularity
  */
 function convertSelectionSlotsToTimeSlots(
   startSelectionSlot: number,
   endSelectionSlot: number,
   selectionSlots: Array<{ hours: number; minutes: number; index: number }>,
   timeSlotInterval: number,
+  selectionGranularity: number,
   startHour: number
 ): { startSlot: number; endSlot: number } {
   // Get the actual times from selection slots
@@ -138,11 +140,10 @@ function convertSelectionSlotsToTimeSlots(
     return { startSlot: startSelectionSlot, endSlot: endSelectionSlot };
   }
   
-  // Convert times to indices compatible with consumer's 30-minute assumption
-  // Consumer code typically does: index * 30 minutes to get the time
-  // So we need to return indices that give the correct result when multiplied by 30
-  const startTimeSlotIndex = timeToConsumerIndex(startTime.hours, startTime.minutes, startHour);
-  const endTimeSlotIndex = timeToConsumerIndex(endTime.hours, endTime.minutes, startHour);
+  // Convert times to indices based on the actual selectionGranularity
+  // This preserves the exact granular times selected by the user
+  const startTimeSlotIndex = timeToGranularIndex(startTime.hours, startTime.minutes, startHour, selectionGranularity);
+  const endTimeSlotIndex = timeToGranularIndex(endTime.hours, endTime.minutes, startHour, selectionGranularity);
   
   return {
     startSlot: startTimeSlotIndex,
@@ -151,19 +152,20 @@ function convertSelectionSlotsToTimeSlots(
 }
 
 /**
- * Convert time to consumer-compatible index that accounts for hardcoded 30-minute assumptions
- * Consumer code typically multiplies indices by 30 minutes, so we adjust accordingly
+ * Convert time to index based on the actual selection granularity
+ * This returns indices that, when multiplied by selectionGranularity, give the exact selected time
  */
-function timeToConsumerIndex(
+function timeToGranularIndex(
   hours: number,
   minutes: number,
-  startHour: number
+  startHour: number,
+  selectionGranularity: number
 ): number {
   const totalMinutes = hours * 60 + minutes;
   const startMinutes = startHour * 60;
   const offsetMinutes = totalMinutes - startMinutes;
   
-  // Since consumer assumes each slot = 30 minutes, we divide by 30 to get the correct index
-  // This way: consumerIndex * 30 = offsetMinutes = correct time
-  return Math.floor(offsetMinutes / 30);
+  // Return index based on actual selection granularity
+  // This way: index * selectionGranularity = offsetMinutes = correct time offset
+  return Math.floor(offsetMinutes / selectionGranularity);
 }
