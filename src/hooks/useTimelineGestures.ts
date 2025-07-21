@@ -16,6 +16,8 @@ interface UseTimelineGesturesProps {
   handleVerticalZoomChange: (zoom: number) => void;
   handleHorizontalZoomChange: (zoom: number) => void;
   disableHorizontalZoom?: boolean;
+  enableSingleTapSelection?: boolean;
+  onSingleTapSelection?: (resourceId: string, slotIndex: number) => void;
 }
 
 export const useTimelineGestures = ({
@@ -31,6 +33,8 @@ export const useTimelineGestures = ({
   handleVerticalZoomChange,
   handleHorizontalZoomChange,
   disableHorizontalZoom = false,
+  enableSingleTapSelection = false,
+  onSingleTapSelection,
 }: UseTimelineGesturesProps) => {
   // Throttled zoom update to prevent excessive calls
   const lastZoomUpdate = useSharedValue(0);
@@ -154,10 +158,42 @@ export const useTimelineGestures = ({
       .blocksExternalGesture(scrollGesture);
   }, [slotHeight, timeSlots.length, resources, startDragSelection, updateDragSelection, completeDragSelection, scrollGesture]);
 
+  // Single tap gesture factory for immediate selection
+  const createTapGesture = useCallback((resourceIndex: number) => {
+    if (!enableSingleTapSelection || !onSingleTapSelection) {
+      return null;
+    }
+    
+    return Gesture.Tap()
+      .maxDuration(300)
+      .onStart((event) => {
+        'worklet';
+        const slotIndex = Math.floor(event.y / slotHeight);
+        const clampedSlotIndex = Math.max(0, Math.min(slotIndex, timeSlots.length - 1));
+        const resource = resources[resourceIndex];
+        
+        runOnJS(onSingleTapSelection)(resource.id, clampedSlotIndex);
+      });
+  }, [enableSingleTapSelection, onSingleTapSelection, slotHeight, timeSlots.length, resources]);
+
+  // Combined gesture factory that includes both drag and tap when enabled
+  const createCombinedGesture = useCallback((resourceIndex: number) => {
+    const dragGesture = createDragGesture(resourceIndex);
+    const tapGesture = createTapGesture(resourceIndex);
+    
+    if (tapGesture) {
+      return Gesture.Exclusive(dragGesture, tapGesture);
+    }
+    
+    return dragGesture;
+  }, [createDragGesture, createTapGesture]);
+
   return {
     pinchHandler,
     scrollGesture,
     createDragGesture,
+    createTapGesture,
+    createCombinedGesture,
     isZooming,
     isDragActive,
   };
