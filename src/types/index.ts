@@ -107,6 +107,7 @@ export interface MultiResourceTimelineProps {
   clearSelectionAfterDrag?: boolean;
   dragSelectionOverlayStyle?: DragSelectionOverlayStyle;
   enableSingleTapSelection?: boolean;
+  isLoading?: boolean;
   onEventPress?: (event: MultiResourceEvent) => void;
   onTimeSlotSelect?: (resourceId: string, startSlot: number, endSlot: number) => void;
   onLoadingChange?: (isLoading: boolean) => void;

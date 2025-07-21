@@ -86,7 +86,7 @@ const SkeletonLoader: React.FC<SkeletonLoaderProps> = ({
   );
 
   return (
-    <View style={styles.container}>
+    <View style={styles.container} testID="skeleton-loader">
       {/* Header skeleton */}
       <View style={styles.headerRow}>
         <View style={styles.timeHeaderSpace}>
