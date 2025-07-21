@@ -99,6 +99,7 @@ export interface MultiResourceTimelineProps {
   showNowIndicator?: boolean;
   format24h?: boolean;
   timeSlotInterval?: number;
+  selectionGranularity?: number;
   resourcesPerPage?: number;
   theme?: 'light' | 'dark';
   enableHaptics?: boolean;

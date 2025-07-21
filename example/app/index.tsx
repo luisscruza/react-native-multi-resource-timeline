@@ -117,6 +117,8 @@ export default function HomeScreen() {
           startHour={7}
           endHour={19}
           hourHeight={80}
+          timeSlotInterval={60}
+          selectionGranularity={15}
           showNowIndicator={true}
           showWorkingHoursBackground={true}
           enableHaptics={true}
