@@ -118,8 +118,9 @@ export const useTimelineSelection = (clearAfterDrag: boolean = true) => {
 };
 
 /**
- * Converts selection slot indices to time-slot-based indices for backward compatibility
- * This fixes the issue where consumers expect slot indices to correspond to timeSlotInterval
+ * Converts selection slot indices to consumer-compatible indices 
+ * This fixes the issue where consumers have hardcoded 30-minute assumptions
+ * regardless of the actual timeSlotInterval
  */
 function convertSelectionSlotsToTimeSlots(
   startSelectionSlot: number,
@@ -137,9 +138,11 @@ function convertSelectionSlotsToTimeSlots(
     return { startSlot: startSelectionSlot, endSlot: endSelectionSlot };
   }
   
-  // Convert times to time-slot-based indices 
-  const startTimeSlotIndex = timeToTimeSlotIndex(startTime.hours, startTime.minutes, startHour, timeSlotInterval);
-  const endTimeSlotIndex = timeToTimeSlotIndex(endTime.hours, endTime.minutes, startHour, timeSlotInterval);
+  // Convert times to indices compatible with consumer's 30-minute assumption
+  // Consumer code typically does: index * 30 minutes to get the time
+  // So we need to return indices that give the correct result when multiplied by 30
+  const startTimeSlotIndex = timeToConsumerIndex(startTime.hours, startTime.minutes, startHour);
+  const endTimeSlotIndex = timeToConsumerIndex(endTime.hours, endTime.minutes, startHour);
   
   return {
     startSlot: startTimeSlotIndex,
@@ -148,18 +151,19 @@ function convertSelectionSlotsToTimeSlots(
 }
 
 /**
- * Convert time to time-slot-based index (based on timeSlotInterval)
+ * Convert time to consumer-compatible index that accounts for hardcoded 30-minute assumptions
+ * Consumer code typically multiplies indices by 30 minutes, so we adjust accordingly
  */
-function timeToTimeSlotIndex(
+function timeToConsumerIndex(
   hours: number,
   minutes: number,
-  startHour: number,
-  timeSlotInterval: number
+  startHour: number
 ): number {
   const totalMinutes = hours * 60 + minutes;
   const startMinutes = startHour * 60;
   const offsetMinutes = totalMinutes - startMinutes;
   
-  // Convert to time slot index based on timeSlotInterval
-  return Math.floor(offsetMinutes / timeSlotInterval);
+  // Since consumer assumes each slot = 30 minutes, we divide by 30 to get the correct index
+  // This way: consumerIndex * 30 = offsetMinutes = correct time
+  return Math.floor(offsetMinutes / 30);
 }

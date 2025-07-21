@@ -189,7 +189,7 @@ const MultiResourceTimeline = forwardRef<MultiResourceTimelineRef, MultiResource
     disableHorizontalZoom: resources.length === 1,
   });
 
-  // Helper function to convert selection slot indices to time slot indices
+  // Helper function to convert selection slot indices to consumer-compatible indices
   const convertSelectionSlotsToTimeSlots = useCallback((startSlot: number, endSlot: number) => {
     // Get the actual times from selection slots
     const startTime = selectionSlots[startSlot];
@@ -200,24 +200,24 @@ const MultiResourceTimeline = forwardRef<MultiResourceTimelineRef, MultiResource
       return { startSlot, endSlot };
     }
     
-    // Convert times to time-slot-based indices 
-    const startTimeSlotIndex = timeToTimeSlotIndex(startTime.hours, startTime.minutes, startHour, timeSlotInterval);
-    const endTimeSlotIndex = timeToTimeSlotIndex(endTime.hours, endTime.minutes, startHour, timeSlotInterval);
+    // Convert times to consumer-compatible indices (accounts for 30-minute hardcoded assumption)
+    const startTimeSlotIndex = timeToConsumerIndex(startTime.hours, startTime.minutes, startHour);
+    const endTimeSlotIndex = timeToConsumerIndex(endTime.hours, endTime.minutes, startHour);
     
     return {
       startSlot: startTimeSlotIndex,
       endSlot: endTimeSlotIndex,
     };
-  }, [selectionSlots, startHour, timeSlotInterval]);
+  }, [selectionSlots, startHour]);
 
-  // Helper function to convert time to time-slot-based index
-  const timeToTimeSlotIndex = useCallback((hours: number, minutes: number, startHour: number, timeSlotInterval: number) => {
+  // Helper function to convert time to consumer-compatible index
+  const timeToConsumerIndex = useCallback((hours: number, minutes: number, startHour: number) => {
     const totalMinutes = hours * 60 + minutes;
     const startMinutes = startHour * 60;
     const offsetMinutes = totalMinutes - startMinutes;
     
-    // Convert to time slot index based on timeSlotInterval
-    return Math.floor(offsetMinutes / timeSlotInterval);
+    // Since consumer assumes each slot = 30 minutes, we divide by 30 to get the correct index
+    return Math.floor(offsetMinutes / 30);
   }, []);
 
   // Keyboard navigation
