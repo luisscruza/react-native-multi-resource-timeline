@@ -156,10 +156,15 @@ const MultiResourceTimeline = forwardRef<MultiResourceTimelineRef, MultiResource
 
   const handleDragComplete = () => {
     mediumImpact();
-    completeDragSelection((resourceId, startSlot, endSlot) => {
-      successFeedback();
-      onTimeSlotSelect?.(resourceId, startSlot, endSlot);
-    });
+    completeDragSelection(
+      (resourceId, startSlot, endSlot) => {
+        successFeedback();
+        onTimeSlotSelect?.(resourceId, startSlot, endSlot);
+      },
+      selectionSlots,
+      timeSlotInterval,
+      startHour
+    );
   };
 
   const {
@@ -184,6 +189,37 @@ const MultiResourceTimeline = forwardRef<MultiResourceTimelineRef, MultiResource
     disableHorizontalZoom: resources.length === 1,
   });
 
+  // Helper function to convert selection slot indices to time slot indices
+  const convertSelectionSlotsToTimeSlots = useCallback((startSlot: number, endSlot: number) => {
+    // Get the actual times from selection slots
+    const startTime = selectionSlots[startSlot];
+    const endTime = selectionSlots[endSlot];
+    
+    if (!startTime || !endTime) {
+      // Fallback to original indices if conversion fails
+      return { startSlot, endSlot };
+    }
+    
+    // Convert times to time-slot-based indices 
+    const startTimeSlotIndex = timeToTimeSlotIndex(startTime.hours, startTime.minutes, startHour, timeSlotInterval);
+    const endTimeSlotIndex = timeToTimeSlotIndex(endTime.hours, endTime.minutes, startHour, timeSlotInterval);
+    
+    return {
+      startSlot: startTimeSlotIndex,
+      endSlot: endTimeSlotIndex,
+    };
+  }, [selectionSlots, startHour, timeSlotInterval]);
+
+  // Helper function to convert time to time-slot-based index
+  const timeToTimeSlotIndex = useCallback((hours: number, minutes: number, startHour: number, timeSlotInterval: number) => {
+    const totalMinutes = hours * 60 + minutes;
+    const startMinutes = startHour * 60;
+    const offsetMinutes = totalMinutes - startMinutes;
+    
+    // Convert to time slot index based on timeSlotInterval
+    return Math.floor(offsetMinutes / timeSlotInterval);
+  }, []);
+
   // Keyboard navigation
   const {
     focusedResource,
@@ -196,7 +232,10 @@ const MultiResourceTimeline = forwardRef<MultiResourceTimelineRef, MultiResource
     timeSlots: selectionSlots, // Use selection slots for keyboard navigation
     onTimeSlotSelect: (resourceId, startSlot, endSlot) => {
       successFeedback();
-      onTimeSlotSelect?.(resourceId, startSlot, endSlot);
+      
+      // Convert selection slot indices to time slot indices for consistent callback
+      const converted = convertSelectionSlotsToTimeSlots(startSlot, endSlot);
+      onTimeSlotSelect?.(resourceId, converted.startSlot, converted.endSlot);
     },
     onEventPress,
   });
