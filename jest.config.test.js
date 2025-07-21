@@ -2,7 +2,12 @@ module.exports = {
   testEnvironment: 'node',
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json', 'node'],
   transform: {
-    '^.+\\.(js|jsx|ts|tsx)$': 'babel-jest',
+    '^.+\\.(js|jsx|ts|tsx)$': ['babel-jest', {
+      presets: [
+        ['@babel/preset-env', { targets: { node: 'current' } }],
+        '@babel/preset-typescript',
+      ]
+    }],
   },
   transformIgnorePatterns: [
     'node_modules/(?!(react-native|@react-native|react-native-calendars|react-native-gesture-handler|react-native-reanimated|expo-haptics)/)',
