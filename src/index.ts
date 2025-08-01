@@ -4,7 +4,7 @@ export { default as MultiResourceTimeline } from './MultiResourceTimeline';
 // Types
 export type {
     DragSelection, EventPosition, EventStatus, MultiResourceEvent, MultiResourceTimelineProps, MultiResourceTimelineRef, Resource,
-    TimeSlot, TimelineTheme,
+    ResourceHeaderRenderer, TimeSlot, TimelineTheme,
     WorkingHours,
     WorkingHoursStyle
 } from './types';

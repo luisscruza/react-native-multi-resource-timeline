@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { SafeAreaView, StatusBar, StyleSheet, View, Text, TouchableOpacity } from 'react-native';
-import { MultiResourceTimeline } from 'react-native-multi-resource-timeline';
+import { MultiResourceTimeline, ResourceHeaderRenderer } from 'react-native-multi-resource-timeline';
 
 // Example data
 const resources = [
@@ -77,6 +77,7 @@ const events = [
 export default function HomeScreen() {
   const [selectedDate] = useState('2025-07-15');
   const [enableSingleTap, setEnableSingleTap] = useState(true);
+  const [useCustomHeader, setUseCustomHeader] = useState(false);
 
   const handleEventPress = (event: any) => {
     console.log('Event pressed:', event);
@@ -91,6 +92,28 @@ export default function HomeScreen() {
     }
   };
 
+  // Custom resource header renderer
+  const customResourceHeader: ResourceHeaderRenderer = ({ resource, index, width, theme }) => (
+    <View style={[
+      styles.customHeader,
+      { 
+        width, 
+        backgroundColor: resource.color + '20', // Add transparency
+        borderColor: resource.color,
+      }
+    ]}>
+      <View style={[styles.customHeaderBadge, { backgroundColor: resource.color }]}>
+        <Text style={styles.customHeaderBadgeText}>#{index + 1}</Text>
+      </View>
+      <Text style={[styles.customHeaderTitle, { color: theme.colors.text.primary }]}>
+        {resource.name}
+      </Text>
+      <Text style={[styles.customHeaderSubtitle, { color: theme.colors.text.secondary }]}>
+        {resource.id}
+      </Text>
+    </View>
+  );
+
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" />
@@ -101,6 +124,14 @@ export default function HomeScreen() {
         >
           <Text style={styles.buttonText}>
             {enableSingleTap ? 'Single Tap: ON' : 'Single Tap: OFF'}
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.button, useCustomHeader ? styles.buttonActive : styles.buttonInactive]}
+          onPress={() => setUseCustomHeader(!useCustomHeader)}
+        >
+          <Text style={styles.buttonText}>
+            {useCustomHeader ? 'Custom Header: ON' : 'Custom Header: OFF'}
           </Text>
         </TouchableOpacity>
         <Text style={styles.helpText}>
@@ -122,6 +153,7 @@ export default function HomeScreen() {
           enableHaptics={true}
           theme="light"
           enableSingleTapSelection={enableSingleTap}
+          renderResourceHeader={useCustomHeader ? customResourceHeader : undefined}
           onEventPress={handleEventPress}
           onTimeSlotSelect={handleTimeSlotSelect}
           workingHoursStyle={{
@@ -175,5 +207,39 @@ const styles = StyleSheet.create({
   timeline: {
     flex: 1,
     margin: 10,
+  },
+  // Custom header styles
+  customHeader: {
+    padding: 12,
+    borderWidth: 2,
+    borderRadius: 8,
+    marginBottom: 2,
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 80,
+  },
+  customHeaderBadge: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 6,
+  },
+  customHeaderBadgeText: {
+    color: 'white',
+    fontSize: 12,
+    fontWeight: 'bold',
+  },
+  customHeaderTitle: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    marginBottom: 2,
+  },
+  customHeaderSubtitle: {
+    fontSize: 10,
+    textAlign: 'center',
+    opacity: 0.7,
   },
 });
