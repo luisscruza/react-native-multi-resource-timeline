@@ -66,6 +66,7 @@ const MultiResourceTimeline = forwardRef<MultiResourceTimelineRef, MultiResource
   dragSelectionOverlayStyle,
   enableSingleTapSelection = false,
   isLoading,
+  renderResourceHeader,
   onEventPress,
   onTimeSlotSelect,
   onLoadingChange,
@@ -432,13 +433,24 @@ const MultiResourceTimeline = forwardRef<MultiResourceTimelineRef, MultiResource
               )}
               
               {resourcesToRender.map((resource, index) => (
-                <ResourceHeader
-                  key={resource.id}
-                  resource={resource}
-                  index={isVirtualized ? startIndex + index : index}
-                  width={currentColumnWidth}
-                  theme={theme}
-                />
+                renderResourceHeader ? (
+                  <View key={resource.id}>
+                    {renderResourceHeader({
+                      resource,
+                      index: isVirtualized ? startIndex + index : index,
+                      width: currentColumnWidth,
+                      theme,
+                    })}
+                  </View>
+                ) : (
+                  <ResourceHeader
+                    key={resource.id}
+                    resource={resource}
+                    index={isVirtualized ? startIndex + index : index}
+                    width={currentColumnWidth}
+                    theme={theme}
+                  />
+                )
               ))}
               
               {/* Right offset for virtualization */}

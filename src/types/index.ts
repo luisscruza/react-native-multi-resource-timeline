@@ -1,3 +1,5 @@
+import React from 'react';
+
 // Basic event interface that extends what we need from TimelineEventProps
 export interface TimelineEventProps {
   start: string;
@@ -81,6 +83,15 @@ export interface DragSelectionOverlayStyle {
   borderRadius?: number;
 }
 
+export interface ResourceHeaderRenderer {
+  (props: {
+    resource: Resource;
+    index: number;
+    width: number;
+    theme: TimelineTheme;
+  }): React.ReactElement;
+}
+
 export interface MultiResourceTimelineRef {
   clearSelection: () => void;
   clearDragSelection: () => void;
@@ -108,6 +119,7 @@ export interface MultiResourceTimelineProps {
   dragSelectionOverlayStyle?: DragSelectionOverlayStyle;
   enableSingleTapSelection?: boolean;
   isLoading?: boolean;
+  renderResourceHeader?: ResourceHeaderRenderer;
   onEventPress?: (event: MultiResourceEvent) => void;
   onTimeSlotSelect?: (resourceId: string, startSlot: number, endSlot: number) => void;
   onLoadingChange?: (isLoading: boolean) => void;
