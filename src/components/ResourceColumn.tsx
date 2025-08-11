@@ -1,7 +1,16 @@
-import React, { memo, useMemo, useCallback } from 'react';
+import React, { memo, useMemo, useCallback, useEffect } from 'react';
 import { View } from 'react-native';
 import { GestureDetector } from 'react-native-gesture-handler';
-import Animated, { Easing, useAnimatedStyle, useSharedValue, withSpring, withTiming } from 'react-native-reanimated';
+import Animated, { 
+  Easing, 
+  useAnimatedStyle, 
+  useSharedValue, 
+  withSpring, 
+  withTiming,
+  useDerivedValue,
+  runOnJS
+} from 'react-native-reanimated';
+import { FlashList } from '@shopify/flash-list';
 import { useEventPositioning } from '../hooks/useEventPositioning';
 import { createTimelineStyles } from '../styles/timelineStyles';
 import { DragSelection, DragSelectionOverlayStyle, MultiResourceEvent, Resource, TimelineTheme, TimeSlot, WorkingHoursStyle } from '../types';
@@ -32,6 +41,111 @@ interface ResourceColumnProps {
   dragSelectionOverlayStyle?: DragSelectionOverlayStyle;
 }
 
+interface SlotBackgroundData {
+  key: string;
+  index: number;
+  isWorkingSlot: boolean;
+  label: string;
+}
+
+interface SlotBackgroundProps {
+  item: SlotBackgroundData;
+  slotHeight: number;
+  baseOpacity: Animated.SharedValue<number>;
+  selectedSlot: Animated.SharedValue<number>;
+  resourceSelected: Animated.SharedValue<boolean>;
+  themeColors: {
+    selectionBg: string;
+    selectionBorder: string;
+    surface: string;
+  };
+}
+
+/**
+ * Memoized SlotBackground component to prevent recreation in render loops.
+ * Uses reanimated shared values for optimal animation performance.
+ */
+const SlotBackground = memo<SlotBackgroundProps>(({ 
+  item, 
+  slotHeight, 
+  baseOpacity, 
+  selectedSlot, 
+  resourceSelected,
+  themeColors 
+}) => {
+  const animatedStyle = useAnimatedStyle(() => {
+    const isSelected = resourceSelected.value && selectedSlot.value === item.index;
+    
+    const borderWidth = withSpring(isSelected ? 2 : 0, {
+      damping: 15,
+      stiffness: 300,
+    });
+    
+    const backgroundColor = withTiming(
+      isSelected ? themeColors.selectionBg : 
+      item.isWorkingSlot ? themeColors.surface : 'transparent',
+      {
+        duration: 200,
+        easing: Easing.out(Easing.quad),
+      }
+    );
+    
+    const borderColor = withTiming(
+      isSelected ? themeColors.selectionBorder : 'transparent', 
+      {
+        duration: 200,
+        easing: Easing.out(Easing.quad),
+      }
+    );
+    
+    return {
+      opacity: baseOpacity.value,
+      borderWidth,
+      backgroundColor,
+      borderColor,
+      position: 'absolute' as const,
+      left: 0,
+      right: 0,
+      height: slotHeight - 2,
+      top: item.index * slotHeight,
+      margin: 1,
+      borderRadius: 8,
+    };
+  });
+
+  return (
+    <Animated.View
+      style={animatedStyle}
+      accessible={true}
+      accessibilityLabel={item.label}
+    />
+  );
+});
+
+SlotBackground.displayName = 'SlotBackground';
+
+/**
+ * Optimized ResourceColumn component using FlashList for slot backgrounds
+ * and shared values for efficient animations.
+ * 
+ * PARENT REQUIREMENTS for optimal performance:
+ * - events: Pass stable reference, ideally pre-filtered for this resource
+ * - timeSlots: Pass stable reference (wrap with useMemo)
+ * - theme: Pass stable reference (wrap with useMemo)
+ * - resource: Pass stable reference (wrap with useMemo)
+ * - slotHeight: Keep fixed/constant for best virtualization performance
+ * - dragGesture, onEventPress: Pass stable references (wrap with useCallback)
+ * 
+ * Example parent usage:
+ * ```tsx
+ * const resources = useMemo(() => [...], [resourceData]);
+ * const timeSlots = useMemo(() => generateTimeSlots(), [startHour, endHour]);
+ * const theme = useMemo(() => createTheme(), [themeName]);
+ * const eventsByResource = useMemo(() => groupEventsByResource(events), [events]);
+ * 
+ * // Then pass: events={eventsByResource.get(resource.id) || []}
+ * ```
+ */
 const ResourceColumnComponent: React.FC<ResourceColumnProps> = ({
   resource,
   resourceIndex,
@@ -53,7 +167,16 @@ const ResourceColumnComponent: React.FC<ResourceColumnProps> = ({
   workingSlots,
   dragSelectionOverlayStyle,
 }) => {
-  const styles = createTimelineStyles(theme);
+  // Memoize styles to prevent recreation on every render
+  const styles = useMemo(() => createTimelineStyles(theme), [theme]);
+  
+  // Memoize theme colors for stable reference
+  const themeColors = useMemo(() => ({
+    selectionBg: theme.colors.selection.background,
+    selectionBorder: theme.colors.selection.border,
+    surface: theme.colors.surface,
+  }), [theme.colors.selection.background, theme.colors.selection.border, theme.colors.surface]);
+
   const { getEventPosition, getEventStyling } = useEventPositioning({
     events,
     date,
@@ -62,23 +185,18 @@ const ResourceColumnComponent: React.FC<ResourceColumnProps> = ({
     eventMinHeight,
   });
 
-  // Optimize event filtering with better memoization
+  // Filter events for this resource - expect parent to pass pre-filtered if possible
   const resourceEvents = useMemo(() => {
-    const filtered = events.filter(event => event.resourceId === resource.id);
-    return filtered;
+    return events.filter(event => event.resourceId === resource.id);
   }, [events, resource.id]);
 
-  // Optimize animated styles - create only one set of shared styles instead of per-slot
+  // Shared values for efficient animations
   const baseOpacity = useSharedValue(0);
-  const selectionState = useSharedValue({
-    selectedSlot: -1,
-    dragStartSlot: -1,
-    dragEndSlot: -1,
-    resourceSelected: false,
-  });
+  const selectedSlot = useSharedValue(-1);
+  const resourceSelected = useSharedValue(false);
 
-  // Update shared values when props change with cleanup
-  React.useEffect(() => {
+  // Update shared values when props change
+  useEffect(() => {
     const timer = setTimeout(() => {
       baseOpacity.value = withTiming(1, {
         duration: 300,
@@ -87,65 +205,42 @@ const ResourceColumnComponent: React.FC<ResourceColumnProps> = ({
     }, 50);
 
     return () => clearTimeout(timer);
-  }, [baseOpacity]);
+  }, []);
 
-  React.useEffect(() => {
+  useEffect(() => {
     const isResourceSelected = selectedTimeSlot?.resourceId === resource.id;
-    const selectedSlot = isResourceSelected ? (selectedTimeSlot?.hourIndex ?? -1) : -1;
+    const newSelectedSlot = isResourceSelected ? (selectedTimeSlot?.hourIndex ?? -1) : -1;
     
-    // Batch the update to prevent excessive animations
-    const timer = setTimeout(() => {
-      selectionState.value = {
-        selectedSlot,
-        dragStartSlot: -1, // No longer needed for individual slot styling
-        dragEndSlot: -1,   // No longer needed for individual slot styling
-        resourceSelected: isResourceSelected,
-      };
-    }, 16); // One frame delay to batch updates
+    // Update shared values directly for immediate animation
+    selectedSlot.value = newSelectedSlot;
+    resourceSelected.value = isResourceSelected;
+  }, [selectedTimeSlot, resource.id]);
 
-    return () => clearTimeout(timer);
-  }, [selectedTimeSlot, resource.id, selectionState]);
+  // Precompute slot background data
+  const slotsData = useMemo(() => {
+    return timeSlots.map((slot, index): SlotBackgroundData => ({
+      key: `${slot.hours}-${slot.minutes}-slot`,
+      index,
+      isWorkingSlot: workingSlots?.isWorking[index] ?? true,
+      label: `Time slot ${slot.hours}:${slot.minutes.toString().padStart(2, '0')}`,
+    }));
+  }, [timeSlots, workingSlots]);
 
-  // Create a single animated style function that we'll use for each slot
-  const getSlotAnimatedStyle = useCallback((slotIndex: number) => 
-    useAnimatedStyle(() => {
-      const { selectedSlot, resourceSelected } = selectionState.value;
-      
-      const isSelected = resourceSelected && selectedSlot === slotIndex;
-      
-      const borderWidth = withSpring(isSelected ? 2 : 0, {
-        damping: 15,
-        stiffness: 300,
-      });
-      
-      // Check if this slot is during working hours
-      const isWorkingSlot = workingSlots?.isWorking[slotIndex] ?? true;
-      
-      const backgroundColor = withTiming(
-        isSelected ? theme.colors.selection.background : 
-        isWorkingSlot ? theme.colors.surface : 'transparent',
-        {
-          duration: 200,
-          easing: Easing.out(Easing.quad),
-        }
-      );
-      
-      const borderColor = withTiming(
-        isSelected ? theme.colors.selection.border : 'transparent', 
-        {
-          duration: 200,
-          easing: Easing.out(Easing.quad),
-        }
-      );
-      
-      return {
-        opacity: baseOpacity.value,
-        borderWidth,
-        backgroundColor,
-        borderColor,
-      };
-    }), [selectionState, baseOpacity, workingSlots, theme]
-  );
+  // Stable FlashList callbacks
+  const keyExtractor = useCallback((item: SlotBackgroundData) => item.key, []);
+
+  const renderSlotItem = useCallback(({ item }: { item: SlotBackgroundData }) => (
+    <SlotBackground
+      item={item}
+      slotHeight={slotHeight}
+      baseOpacity={baseOpacity}
+      selectedSlot={selectedSlot}
+      resourceSelected={resourceSelected}
+      themeColors={themeColors}
+    />
+  ), [slotHeight, baseOpacity, selectedSlot, resourceSelected, themeColors]);
+
+  const getItemType = useCallback(() => 'slot', []);
 
   return (
     <View 
@@ -167,34 +262,17 @@ const ResourceColumnComponent: React.FC<ResourceColumnProps> = ({
             />
           )}
           
-          {/* Time slot backgrounds */}
-          {timeSlots.map((slot, index) => {
-            const SlotAnimatedComponent = React.memo(() => {
-              const animatedStyle = getSlotAnimatedStyle(index);
-              return (
-                <Animated.View
-                  style={[
-                    styles.timeSlotBackground,
-                    {
-                      height: slotHeight - 2,
-                      top: index * slotHeight,
-                      margin: 1,
-                    },
-                    animatedStyle,
-                  ]}
-                  accessible={true}
-                  accessibilityLabel={`Time slot ${slot.hours}:${slot.minutes.toString().padStart(2, '0')}`}
-                />
-              );
-            });
-            SlotAnimatedComponent.displayName = `SlotAnimatedComponent-${index}`;
-            
-            return (
-              <SlotAnimatedComponent
-                key={`${slot.hours}-${slot.minutes}-slot`}
-              />
-            );
-          })}
+          {/* Time slot backgrounds using FlashList */}
+          <FlashList
+            data={slotsData}
+            renderItem={renderSlotItem}
+            keyExtractor={keyExtractor}
+            getItemType={getItemType}
+            removeClippedSubviews
+            showsVerticalScrollIndicator={false}
+            scrollEnabled={false}
+            pointerEvents="none"
+          />
 
           {/* Drag Selection Overlay */}
           <DragSelectionOverlay
@@ -229,101 +307,59 @@ const ResourceColumnComponent: React.FC<ResourceColumnProps> = ({
   );
 };
 
-// Enhanced comparison function to optimize re-renders, especially during horizontal scrolling
-const arePropsEqual = (prevProps: ResourceColumnProps, nextProps: ResourceColumnProps) => {
-  // Fast path: check if it's the same resource instance
-  if (prevProps.resource === nextProps.resource && 
-      prevProps.resourceIndex === nextProps.resourceIndex &&
-      prevProps.width === nextProps.width &&
-      prevProps.slotHeight === nextProps.slotHeight) {
-    
-    // Check only critical state that affects rendering
-    const prevSelected = prevProps.selectedTimeSlot?.resourceId === prevProps.resource.id;
-    const nextSelected = nextProps.selectedTimeSlot?.resourceId === nextProps.resource.id;
-    const prevDragForThisResource = prevProps.dragSelection?.resourceId === prevProps.resource.id;
-    const nextDragForThisResource = nextProps.dragSelection?.resourceId === nextProps.resource.id;
-    
-    // If no selection states apply to this resource, skip expensive event comparison
-    if (!prevSelected && !nextSelected && !prevDragForThisResource && !nextDragForThisResource) {
-      // Only check if events array reference changed (shallow comparison)
-      return prevProps.events === nextProps.events && 
-             prevProps.timeSlots === nextProps.timeSlots;
-    }
-  }
-  
-  // Full comparison for resources that might need updates
-  // Check if resource changed (deep comparison)
-  if (prevProps.resource.id !== nextProps.resource.id ||
-      prevProps.resource.name !== nextProps.resource.name ||
-      prevProps.resource.color !== nextProps.resource.color) {
-    return false;
-  }
-  
-  // Check if layout props changed
-  if (prevProps.width !== nextProps.width ||
+/**
+ * O(1) comparator for ResourceColumn memoization.
+ * 
+ * IMPORTANT: This comparator assumes parent provides stable references for:
+ * - resource (memoized object)
+ * - events (memoized array, ideally pre-filtered per resource)
+ * - timeSlots (memoized array)
+ * - theme (memoized object)
+ * - dragGesture, onEventPress (memoized callbacks)
+ * - selectedTimeSlot, dragSelection (stable objects)
+ * 
+ * The comparator only checks referential equality and scalar values to maintain O(1) performance.
+ * Expensive operations like filtering or deep comparisons are avoided to prevent performance bottlenecks.
+ */
+const arePropsEqual = (prevProps: ResourceColumnProps, nextProps: ResourceColumnProps): boolean => {
+  // Check scalar props
+  if (prevProps.resourceIndex !== nextProps.resourceIndex ||
+      prevProps.width !== nextProps.width ||
       prevProps.slotHeight !== nextProps.slotHeight ||
       prevProps.hourHeight !== nextProps.hourHeight ||
-      prevProps.eventMinHeight !== nextProps.eventMinHeight) {
-    return false;
-  }
-  
-  // Check if events for this resource changed
-  const prevResourceEvents = prevProps.events.filter(e => e.resourceId === prevProps.resource.id);
-  const nextResourceEvents = nextProps.events.filter(e => e.resourceId === nextProps.resource.id);
-  
-  if (prevResourceEvents.length !== nextResourceEvents.length) {
-    return false;
-  }
-  
-  // Quick check for event changes
-  for (let i = 0; i < prevResourceEvents.length; i++) {
-    const prevEvent = prevResourceEvents[i];
-    const nextEvent = nextResourceEvents[i];
-    if (prevEvent.id !== nextEvent.id ||
-        prevEvent.start !== nextEvent.start ||
-        prevEvent.end !== nextEvent.end ||
-        prevEvent.title !== nextEvent.title) {
-      return false;
-    }
-  }
-  
-  // Check selection state
-  const prevSelected = prevProps.selectedTimeSlot?.resourceId === prevProps.resource.id;
-  const nextSelected = nextProps.selectedTimeSlot?.resourceId === nextProps.resource.id;
-  
-  if (prevSelected !== nextSelected ||
-      (prevSelected && prevProps.selectedTimeSlot?.hourIndex !== nextProps.selectedTimeSlot?.hourIndex)) {
-    return false;
-  }
-  
-  // Check if drag selection for this resource changed (for overlay)
-  const prevDragForThisResource = prevProps.dragSelection?.resourceId === prevProps.resource.id;
-  const nextDragForThisResource = nextProps.dragSelection?.resourceId === nextProps.resource.id;
-  
-  if (prevDragForThisResource !== nextDragForThisResource) {
-    return false;
-  }
-  
-  if (prevDragForThisResource && nextDragForThisResource) {
-    if (prevProps.dragSelection!.startSlot !== nextProps.dragSelection!.startSlot ||
-        prevProps.dragSelection!.endSlot !== nextProps.dragSelection!.endSlot) {
-      return false;
-    }
-  }
-  
-  // Check basic props
-  if (prevProps.date !== nextProps.date ||
+      prevProps.eventMinHeight !== nextProps.eventMinHeight ||
       prevProps.startHour !== nextProps.startHour ||
-      prevProps.showWorkingHoursBackground !== nextProps.showWorkingHoursBackground ||
-      prevProps.timeSlots.length !== nextProps.timeSlots.length) {
+      prevProps.date !== nextProps.date ||
+      prevProps.showWorkingHoursBackground !== nextProps.showWorkingHoursBackground) {
     return false;
   }
-  
+
+  // Check resource object referential equality (parent should memoize)
+  if (prevProps.resource !== nextProps.resource) {
+    return false;
+  }
+
+  // Check referential equality for arrays and objects (O(1))
+  if (prevProps.events !== nextProps.events ||
+      prevProps.timeSlots !== nextProps.timeSlots ||
+      prevProps.theme !== nextProps.theme ||
+      prevProps.dragGesture !== nextProps.dragGesture ||
+      prevProps.onEventPress !== nextProps.onEventPress ||
+      prevProps.workingSlots !== nextProps.workingSlots ||
+      prevProps.workingHoursStyle !== nextProps.workingHoursStyle ||
+      prevProps.dragSelectionOverlayStyle !== nextProps.dragSelectionOverlayStyle) {
+    return false;
+  }
+
+  // Check selection state objects
+  if (prevProps.selectedTimeSlot !== nextProps.selectedTimeSlot ||
+      prevProps.dragSelection !== nextProps.dragSelection) {
+    return false;
+  }
+
   return true;
 };
 
 ResourceColumnComponent.displayName = 'ResourceColumn';
-
-const ResourceColumn = ResourceColumnComponent;
 
 export default memo(ResourceColumnComponent, arePropsEqual);
