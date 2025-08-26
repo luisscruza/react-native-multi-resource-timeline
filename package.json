@@ -1,6 +1,6 @@
 {
   "name": "react-native-multi-resource-timeline",
-  "version": "1.3.0",
+  "version": "1.4.0",
   "description": "A powerful, customizable multi-resource timeline component for React Native with advanced gesture support, zoom capabilities, and working hours visualization",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
@@ -55,9 +55,9 @@
   "peerDependencies": {
     "react": ">=16.8.0",
     "react-native": ">=0.60.0",
+    "react-native-calendars": ">=1.0.0",
     "react-native-gesture-handler": ">=2.0.0",
-    "react-native-reanimated": ">=3.0.0",
-    "react-native-calendars": ">=1.0.0"
+    "react-native-reanimated": ">=3.0.0"
   },
   "peerDependenciesMeta": {
     "expo-haptics": {
@@ -91,5 +91,8 @@
   },
   "publishConfig": {
     "access": "public"
+  },
+  "dependencies": {
+    "@shopify/flash-list": "^2.0.2"
   }
 }
