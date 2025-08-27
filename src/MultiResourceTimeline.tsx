@@ -44,7 +44,7 @@ import ResourceHeader from './components/ResourceHeader';
 import SkeletonLoader from './components/SkeletonLoader';
 import TimeColumn from './components/TimeColumn';
 
-const { width } = Dimensions.get('window');
+const { width: screenWidth } = Dimensions.get('window');
 
 const MultiResourceTimeline = forwardRef<MultiResourceTimelineRef, MultiResourceTimelineProps>(({
   events,
@@ -59,6 +59,7 @@ const MultiResourceTimeline = forwardRef<MultiResourceTimelineRef, MultiResource
   timeSlotInterval = 60,
   resourcesPerPage = 2,
   theme: themeProp = 'light',
+  width = screenWidth,
   enableHaptics = true,
   showWorkingHoursBackground = false,
   workingHoursStyle,

@@ -18,8 +18,6 @@ interface SkeletonLoaderProps {
   eventCount?: number;
 }
 
-const { width } = Dimensions.get('window');
-
 const SkeletonLoader: React.FC<SkeletonLoaderProps> = ({
   theme,
   resourceCount = 4,

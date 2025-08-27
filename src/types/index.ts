@@ -112,6 +112,7 @@ export interface MultiResourceTimelineProps {
   timeSlotInterval?: number;
   resourcesPerPage?: number;
   theme?: 'light' | 'dark';
+  width?: number;
   enableHaptics?: boolean;
   showWorkingHoursBackground?: boolean;
   workingHoursStyle?: WorkingHoursStyle;

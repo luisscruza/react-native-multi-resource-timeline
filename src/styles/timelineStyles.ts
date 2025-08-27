@@ -2,8 +2,6 @@ import { Dimensions, StyleSheet } from 'react-native';
 import { HOUR_WIDTH } from '../constants';
 import { TimelineTheme } from '../types';
 
-const { width } = Dimensions.get('window');
-
 export const createTimelineStyles = (theme: TimelineTheme) => {
   return StyleSheet.create({
     container: {
