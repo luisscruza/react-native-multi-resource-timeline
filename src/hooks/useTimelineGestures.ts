@@ -1,6 +1,6 @@
 import { useCallback } from 'react';
-import { Gesture, PinchGestureHandlerGestureEvent } from 'react-native-gesture-handler';
-import { runOnJS, useAnimatedGestureHandler, useSharedValue } from 'react-native-reanimated';
+import { Gesture } from 'react-native-gesture-handler';
+import { runOnJS, useSharedValue } from 'react-native-reanimated';
 import { ZOOM_LIMITS, PERFORMANCE } from '../constants';
 
 interface UseTimelineGesturesProps {
@@ -41,47 +41,39 @@ export const useTimelineGestures = ({
   const ZOOM_THROTTLE_MS = PERFORMANCE.zoomThrottle; // ~30fps for zoom updates
   
   // Shared values for pinch gesture
-  const verticalScale = useSharedValue(1);
-  const horizontalScale = useSharedValue(1);
+  // Shared values for pinch gesture
   const baseVerticalScale = useSharedValue(1);
   const baseHorizontalScale = useSharedValue(1);
-  const initialFocalX = useSharedValue(0);
-  const initialFocalY = useSharedValue(0);
+  const currentVerticalScale = useSharedValue(1);
+  const currentHorizontalScale = useSharedValue(1);
   const pinchDirection = useSharedValue<'none' | 'vertical' | 'horizontal'>('none');
   const isZooming = useSharedValue(0);
   const isDragActive = useSharedValue(false);
 
-  // Create scroll gesture that gets disabled during drag
-  const scrollGesture = Gesture.Native().shouldCancelWhenOutside(false);
+  // Create scroll gesture that gets disabled during drag - improved for Android  
+  const scrollGesture = Gesture.Native()
+    .shouldCancelWhenOutside(false);
 
-  // Optimized pinch gesture handler
-  const pinchHandler = useAnimatedGestureHandler<PinchGestureHandlerGestureEvent>({
-    onStart: (event) => {
+  // Optimized pinch gesture handler using the new Gesture API - Android-friendly
+  const pinchGesture = Gesture.Pinch()
+    .onStart(() => {
       'worklet';
       baseVerticalScale.value = 1;
       baseHorizontalScale.value = 1;
-      initialFocalX.value = event.focalX;
-      initialFocalY.value = event.focalY;
       pinchDirection.value = 'none';
       isZooming.value = 1;
-    },
-    onActive: (event) => {
+    })
+    .onUpdate((event) => {
       'worklet';
       
-      const deltaX = Math.abs(event.focalX - initialFocalX.value);
-      const deltaY = Math.abs(event.focalY - initialFocalY.value);
-      
-      // Determine pinch direction
-      if (pinchDirection.value === 'none' && event.scale !== 1) {
-        if (deltaX > deltaY && !disableHorizontalZoom) {
-          pinchDirection.value = 'horizontal';
-        } else {
-          pinchDirection.value = 'vertical';
-        }
+      // Safety check for Android - prevent crashes when pointers become invalid
+      if (!event.scale || event.scale <= 0) {
+        return;
       }
       
-      // Default to vertical after small movement
-      if (pinchDirection.value === 'none' && (deltaX > 5 || deltaY > 5)) {
+      // Determine pinch direction based on scale change
+      if (pinchDirection.value === 'none' && Math.abs(event.scale - 1) > 0.05) {
+        // Default to vertical zoom for most cases to keep it simple and stable
         pinchDirection.value = 'vertical';
       }
       
@@ -90,33 +82,41 @@ export const useTimelineGestures = ({
       const shouldUpdate = now - lastZoomUpdate.value >= ZOOM_THROTTLE_MS;
       
       if (pinchDirection.value === 'vertical' && shouldUpdate) {
-        verticalScale.value = baseVerticalScale.value * event.scale;
-        const newZoom = Math.max(ZOOM_LIMITS.vertical.min, Math.min(ZOOM_LIMITS.vertical.max, verticalScale.value));
+        const scale = Math.max(0.5, Math.min(3.0, event.scale)); // Clamp scale values
+        currentVerticalScale.value = baseVerticalScale.value * scale;
+        const newZoom = Math.max(ZOOM_LIMITS.vertical.min, Math.min(ZOOM_LIMITS.vertical.max, currentVerticalScale.value));
         runOnJS(handleLiveVerticalZoomChange)(newZoom);
         lastZoomUpdate.value = now;
       } else if (pinchDirection.value === 'horizontal' && !disableHorizontalZoom && shouldUpdate) {
-        horizontalScale.value = baseHorizontalScale.value * event.scale;
-        const newZoom = Math.max(ZOOM_LIMITS.horizontal.min, Math.min(ZOOM_LIMITS.horizontal.max, horizontalScale.value));
+        const scale = Math.max(0.5, Math.min(3.0, event.scale)); // Clamp scale values
+        currentHorizontalScale.value = baseHorizontalScale.value * scale;
+        const newZoom = Math.max(ZOOM_LIMITS.horizontal.min, Math.min(ZOOM_LIMITS.horizontal.max, currentHorizontalScale.value));
         runOnJS(handleLiveHorizontalZoomChange)(newZoom);
         lastZoomUpdate.value = now;
       }
-    },
-    onEnd: () => {
+    })
+    .onEnd(() => {
       'worklet';
       if (pinchDirection.value === 'vertical') {
-        const newZoom = Math.max(ZOOM_LIMITS.vertical.min, Math.min(ZOOM_LIMITS.vertical.max, verticalScale.value));
+        const newZoom = Math.max(ZOOM_LIMITS.vertical.min, Math.min(ZOOM_LIMITS.vertical.max, currentVerticalScale.value));
         runOnJS(handleVerticalZoomChange)(newZoom);
-        verticalScale.value = 1;
+        currentVerticalScale.value = 1;
       } else if (pinchDirection.value === 'horizontal' && !disableHorizontalZoom) {
-        const newZoom = Math.max(ZOOM_LIMITS.horizontal.min, Math.min(ZOOM_LIMITS.horizontal.max, horizontalScale.value));
+        const newZoom = Math.max(ZOOM_LIMITS.horizontal.min, Math.min(ZOOM_LIMITS.horizontal.max, currentHorizontalScale.value));
         runOnJS(handleHorizontalZoomChange)(newZoom);
-        horizontalScale.value = 1;
+        currentHorizontalScale.value = 1;
       }
       
       isZooming.value = 0;
       pinchDirection.value = 'none';
-    },
-  });
+    })
+    .onFinalize(() => {
+      'worklet';
+      // Reset state on gesture finalization for Android stability
+      isZooming.value = 0;
+      pinchDirection.value = 'none';
+    })
+    .runOnJS(false);
 
   // Optimized drag gesture factory
   const createDragGesture = useCallback((resourceIndex: number) => {
@@ -141,6 +141,8 @@ export const useTimelineGestures = ({
       })
       .onUpdate((event) => {
         'worklet';
+        if (!isDragActive.value) return;
+        
         const slotIndex = Math.floor(event.y / slotHeight);
         const clampedSlotIndex = Math.max(0, Math.min(slotIndex, timeSlots.length - 1));
         
@@ -148,15 +150,18 @@ export const useTimelineGestures = ({
       })
       .onEnd(() => {
         'worklet';
-        isDragActive.value = false;
-        runOnJS(completeDragSelection)();
+        if (isDragActive.value) {
+          isDragActive.value = false;
+          runOnJS(completeDragSelection)();
+        }
       })
       .onFinalize(() => {
         'worklet';
         isDragActive.value = false;
       })
-      .blocksExternalGesture(scrollGesture);
-  }, [slotHeight, timeSlots.length, resources, startDragSelection, updateDragSelection, completeDragSelection, scrollGesture]);
+      .blocksExternalGesture(scrollGesture)
+      .requireExternalGestureToFail(pinchGesture);
+  }, [slotHeight, timeSlots.length, resources, startDragSelection, updateDragSelection, completeDragSelection, scrollGesture, pinchGesture, isDragActive]);
 
   // Single tap gesture factory for immediate selection
   const createTapGesture = useCallback((resourceIndex: number) => {
@@ -189,7 +194,7 @@ export const useTimelineGestures = ({
   }, [createDragGesture, createTapGesture]);
 
   return {
-    pinchHandler,
+    pinchGesture,
     scrollGesture,
     createDragGesture,
     createTapGesture,

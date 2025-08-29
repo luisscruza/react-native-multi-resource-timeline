@@ -1,11 +1,10 @@
 import React, { forwardRef, useEffect, useImperativeHandle, useMemo, useState } from 'react';
-import { Dimensions, ScrollView, View } from 'react-native';
+import { Dimensions, Platform, ScrollView, View } from 'react-native';
 import { CalendarUtils } from 'react-native-calendars';
 import {
   GestureDetector,
   GestureHandlerRootView,
   ScrollView as GestureScrollView,
-  PinchGestureHandler,
 } from 'react-native-gesture-handler';
 import Animated, {
   Easing,
@@ -175,7 +174,7 @@ const MultiResourceTimeline = forwardRef<MultiResourceTimelineRef, MultiResource
   };
 
   const {
-    pinchHandler,
+    pinchGesture,
     scrollGesture,
     createDragGesture,
     createTapGesture,
@@ -469,14 +468,16 @@ const MultiResourceTimeline = forwardRef<MultiResourceTimelineRef, MultiResource
           )}
         </View>
 
-        {/* Timeline Content with Pinch Gesture */}
-        <PinchGestureHandler onGestureEvent={pinchHandler} shouldCancelWhenOutside={false}>
-          <Animated.View style={styles.scrollContainer}>
-            <GestureDetector gesture={scrollGesture}>
+        {/* Timeline Content with Improved Gesture Handling */}
+        <Animated.View style={styles.scrollContainer}>
+          <GestureDetector gesture={pinchGesture}>
+            <View style={{ flex: 1 }}>
               <GestureScrollView 
                 style={{ flex: 1 }}
                 onScroll={isVirtualScrollEnabled ? handleVirtualScroll : undefined}
                 scrollEventThrottle={PERFORMANCE.scrollThrottle}
+                showsVerticalScrollIndicator={Platform.OS === 'ios'}
+                overScrollMode={Platform.OS === 'android' ? 'never' : 'always'}
               >
                 <View style={styles.timelineContainer}>
                   {/* Time column */}
@@ -496,12 +497,13 @@ const MultiResourceTimeline = forwardRef<MultiResourceTimelineRef, MultiResource
                     showsHorizontalScrollIndicator={false}
                     onScroll={handleContentScroll}
                     scrollEventThrottle={PERFORMANCE.scrollThrottle}
-                    bounces={false}
+                    bounces={Platform.OS === 'ios'}
                     removeClippedSubviews={true}
                     decelerationRate="fast"
                     directionalLockEnabled={true}
                     style={{ width: scrollViewWidth }}
                     contentContainerStyle={{ width: totalContentWidth }}
+                    overScrollMode={Platform.OS === 'android' ? 'never' : 'auto'}
                   >
                     <View style={{ flexDirection: 'row', width: totalContentWidth }}>
                       {/* Left offset for virtualization */}
@@ -555,9 +557,9 @@ const MultiResourceTimeline = forwardRef<MultiResourceTimelineRef, MultiResource
                   )}
                 </View>
               </GestureScrollView>
-            </GestureDetector>
-          </Animated.View>
-        </PinchGestureHandler>
+            </View>
+          </GestureDetector>
+        </Animated.View>
       </GestureHandlerRootView>
     </TimelineErrorBoundary>
   );
