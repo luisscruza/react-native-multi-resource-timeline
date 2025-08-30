@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useMemo } from 'react';
 import { Platform } from 'react-native';
 import { Gesture } from 'react-native-gesture-handler';
 import { runOnJS, useSharedValue } from 'react-native-reanimated';
@@ -37,6 +37,10 @@ export const useTimelineGestures = ({
   enableSingleTapSelection = false,
   onSingleTapSelection,
 }: UseTimelineGesturesProps) => {
+  // Extract simple values that can be shared with worklets - memoized to prevent recreation
+  const timeSlotsLength = timeSlots.length;
+  const resourceIds = useMemo(() => resources.map(r => r.id), [resources]); // Extract just the IDs we need
+  
   // Throttled zoom update to prevent excessive calls
   const lastZoomUpdate = useSharedValue(0);
   const ZOOM_THROTTLE_MS = PERFORMANCE.zoomThrottle; // ~30fps for zoom updates
@@ -146,11 +150,11 @@ export const useTimelineGestures = ({
         }
         
         const slotIndex = Math.floor(event.y / slotHeight);
-        const clampedSlotIndex = Math.max(0, Math.min(slotIndex, timeSlots.length - 1));
-        const resource = resources[resourceIndex];
+        const clampedSlotIndex = Math.max(0, Math.min(slotIndex, timeSlotsLength - 1));
+        const resourceId = resourceIds[resourceIndex]; // Use extracted ID
         
-        if (resource && resource.id) {
-          runOnJS(startDragSelection)(resource.id, clampedSlotIndex);
+        if (resourceId) {
+          runOnJS(startDragSelection)(resourceId, clampedSlotIndex);
         }
       })
       .onUpdate((event) => {
@@ -158,7 +162,7 @@ export const useTimelineGestures = ({
         if (!isDragActive.value || !event.y || !slotHeight || slotHeight <= 0) return;
         
         const slotIndex = Math.floor(event.y / slotHeight);
-        const clampedSlotIndex = Math.max(0, Math.min(slotIndex, timeSlots.length - 1));
+        const clampedSlotIndex = Math.max(0, Math.min(slotIndex, timeSlotsLength - 1));
         
         runOnJS(updateDragSelection)(clampedSlotIndex);
       })
@@ -175,7 +179,7 @@ export const useTimelineGestures = ({
       })
       .simultaneousWithExternalGesture(scrollGesture)
       .requireExternalGestureToFail(pinchGesture);
-  }, [slotHeight, timeSlots.length, resources, startDragSelection, updateDragSelection, completeDragSelection, scrollGesture, pinchGesture, isDragActive]);
+  }, [slotHeight, timeSlotsLength, resourceIds, startDragSelection, updateDragSelection, completeDragSelection, scrollGesture, pinchGesture, isDragActive]);
 
   // Enhanced tap gesture factory - works for both single tap selection and Android slot selection
   const createTapGesture = useCallback((resourceIndex: number) => {
@@ -194,23 +198,23 @@ export const useTimelineGestures = ({
         if (!event.y || !slotHeight || slotHeight <= 0) return;
         
         const slotIndex = Math.floor(event.y / slotHeight);
-        const clampedSlotIndex = Math.max(0, Math.min(slotIndex, timeSlots.length - 1));
-        const resource = resources[resourceIndex];
+        const clampedSlotIndex = Math.max(0, Math.min(slotIndex, timeSlotsLength - 1));
+        const resourceId = resourceIds[resourceIndex]; // Use extracted ID
         
-        if (resource && resource.id) {
+        if (resourceId) {
           // On Android, use tap for single slot selection (like drag start and end on the same slot)
           if (Platform.OS === 'android') {
-            runOnJS(startDragSelection)(resource.id, clampedSlotIndex);
+            runOnJS(startDragSelection)(resourceId, clampedSlotIndex);
             // Immediately complete the selection for single slot
             runOnJS(updateDragSelection)(clampedSlotIndex);
             runOnJS(completeDragSelection)();
           } else if (onSingleTapSelection) {
             // On iOS, use the single tap selection callback if provided
-            runOnJS(onSingleTapSelection)(resource.id, clampedSlotIndex);
+            runOnJS(onSingleTapSelection)(resourceId, clampedSlotIndex);
           }
         }
       });
-  }, [Platform.OS, enableSingleTapSelection, onSingleTapSelection, slotHeight, timeSlots.length, resources, startDragSelection, updateDragSelection, completeDragSelection]);
+  }, [Platform.OS, enableSingleTapSelection, onSingleTapSelection, slotHeight, timeSlotsLength, resourceIds, startDragSelection, updateDragSelection, completeDragSelection]);
 
   // Combined gesture factory that handles platform differences
   const createCombinedGesture = useCallback((resourceIndex: number) => {
