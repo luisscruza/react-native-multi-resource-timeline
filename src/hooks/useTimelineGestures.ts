@@ -1,4 +1,5 @@
 import { useCallback } from 'react';
+import { Platform } from 'react-native';
 import { Gesture } from 'react-native-gesture-handler';
 import { runOnJS, useSharedValue } from 'react-native-reanimated';
 import { ZOOM_LIMITS, PERFORMANCE } from '../constants';
@@ -118,12 +119,19 @@ export const useTimelineGestures = ({
     })
     .runOnJS(false);
 
-  // Optimized drag gesture factory - Android-friendly
+  // Platform-specific drag gesture factory
   const createDragGesture = useCallback((resourceIndex: number) => {
+    // On Android, disable drag gesture to avoid conflicts - use tap only
+    if (Platform.OS === 'android') {
+      return Gesture.Pan()
+        .enabled(false); // Disable drag on Android
+    }
+    
+    // iOS drag gesture (original implementation)
     return Gesture.Pan()
-      .activateAfterLongPress(150) // Reduced from 200ms for better Android responsiveness
+      .activateAfterLongPress(150)
       .maxPointers(1)
-      .minDistance(3) // Reduced from 5 for better Android sensitivity
+      .minDistance(5)
       .shouldCancelWhenOutside(false)
       .onBegin(() => {
         'worklet';
@@ -133,7 +141,6 @@ export const useTimelineGestures = ({
         'worklet';
         isDragActive.value = true;
         
-        // Add safety checks for Android
         if (!event.y || !slotHeight || slotHeight <= 0) {
           return;
         }
@@ -166,13 +173,17 @@ export const useTimelineGestures = ({
         'worklet';
         isDragActive.value = false;
       })
-      .simultaneousWithExternalGesture(scrollGesture) // Changed from blocksExternalGesture for Android
+      .simultaneousWithExternalGesture(scrollGesture)
       .requireExternalGestureToFail(pinchGesture);
   }, [slotHeight, timeSlots.length, resources, startDragSelection, updateDragSelection, completeDragSelection, scrollGesture, pinchGesture, isDragActive]);
 
-  // Single tap gesture factory for immediate selection
+  // Enhanced tap gesture factory - works for both single tap selection and Android slot selection
   const createTapGesture = useCallback((resourceIndex: number) => {
-    if (!enableSingleTapSelection || !onSingleTapSelection) {
+    // On Android, always enable tap for slot selection (since drag is disabled)
+    // On iOS, only enable if single tap selection is explicitly enabled
+    const shouldEnableTap = Platform.OS === 'android' || enableSingleTapSelection;
+    
+    if (!shouldEnableTap) {
       return null;
     }
     
@@ -180,19 +191,38 @@ export const useTimelineGestures = ({
       .maxDuration(300)
       .onStart((event) => {
         'worklet';
+        if (!event.y || !slotHeight || slotHeight <= 0) return;
+        
         const slotIndex = Math.floor(event.y / slotHeight);
         const clampedSlotIndex = Math.max(0, Math.min(slotIndex, timeSlots.length - 1));
         const resource = resources[resourceIndex];
         
-        runOnJS(onSingleTapSelection)(resource.id, clampedSlotIndex);
+        if (resource && resource.id) {
+          // On Android, use tap for single slot selection (like drag start and end on the same slot)
+          if (Platform.OS === 'android') {
+            runOnJS(startDragSelection)(resource.id, clampedSlotIndex);
+            // Immediately complete the selection for single slot
+            runOnJS(updateDragSelection)(clampedSlotIndex);
+            runOnJS(completeDragSelection)();
+          } else if (onSingleTapSelection) {
+            // On iOS, use the single tap selection callback if provided
+            runOnJS(onSingleTapSelection)(resource.id, clampedSlotIndex);
+          }
+        }
       });
-  }, [enableSingleTapSelection, onSingleTapSelection, slotHeight, timeSlots.length, resources]);
+  }, [Platform.OS, enableSingleTapSelection, onSingleTapSelection, slotHeight, timeSlots.length, resources, startDragSelection, updateDragSelection, completeDragSelection]);
 
-  // Combined gesture factory that includes both drag and tap when enabled
+  // Combined gesture factory that handles platform differences
   const createCombinedGesture = useCallback((resourceIndex: number) => {
     const dragGesture = createDragGesture(resourceIndex);
     const tapGesture = createTapGesture(resourceIndex);
     
+    if (Platform.OS === 'android') {
+      // On Android, only use tap gesture (drag is disabled)
+      return tapGesture || dragGesture; // Fallback to disabled drag if tap is null
+    }
+    
+    // On iOS, use both drag and tap if available
     if (tapGesture) {
       return Gesture.Exclusive(dragGesture, tapGesture);
     }
