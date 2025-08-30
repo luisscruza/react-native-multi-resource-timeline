@@ -118,12 +118,12 @@ export const useTimelineGestures = ({
     })
     .runOnJS(false);
 
-  // Optimized drag gesture factory
+  // Optimized drag gesture factory - Android-friendly
   const createDragGesture = useCallback((resourceIndex: number) => {
     return Gesture.Pan()
-      .activateAfterLongPress(200)
+      .activateAfterLongPress(150) // Reduced from 200ms for better Android responsiveness
       .maxPointers(1)
-      .minDistance(5)
+      .minDistance(3) // Reduced from 5 for better Android sensitivity
       .shouldCancelWhenOutside(false)
       .onBegin(() => {
         'worklet';
@@ -133,15 +133,22 @@ export const useTimelineGestures = ({
         'worklet';
         isDragActive.value = true;
         
+        // Add safety checks for Android
+        if (!event.y || !slotHeight || slotHeight <= 0) {
+          return;
+        }
+        
         const slotIndex = Math.floor(event.y / slotHeight);
         const clampedSlotIndex = Math.max(0, Math.min(slotIndex, timeSlots.length - 1));
         const resource = resources[resourceIndex];
         
-        runOnJS(startDragSelection)(resource.id, clampedSlotIndex);
+        if (resource && resource.id) {
+          runOnJS(startDragSelection)(resource.id, clampedSlotIndex);
+        }
       })
       .onUpdate((event) => {
         'worklet';
-        if (!isDragActive.value) return;
+        if (!isDragActive.value || !event.y || !slotHeight || slotHeight <= 0) return;
         
         const slotIndex = Math.floor(event.y / slotHeight);
         const clampedSlotIndex = Math.max(0, Math.min(slotIndex, timeSlots.length - 1));
@@ -159,7 +166,7 @@ export const useTimelineGestures = ({
         'worklet';
         isDragActive.value = false;
       })
-      .blocksExternalGesture(scrollGesture)
+      .simultaneousWithExternalGesture(scrollGesture) // Changed from blocksExternalGesture for Android
       .requireExternalGestureToFail(pinchGesture);
   }, [slotHeight, timeSlots.length, resources, startDragSelection, updateDragSelection, completeDragSelection, scrollGesture, pinchGesture, isDragActive]);
 
