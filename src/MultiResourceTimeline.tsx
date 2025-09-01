@@ -1,6 +1,5 @@
 import React, { forwardRef, useEffect, useImperativeHandle, useMemo, useState } from 'react';
 import { Dimensions, ScrollView, View } from 'react-native';
-import { CalendarUtils } from 'react-native-calendars';
 import {
   GestureDetector,
   GestureHandlerRootView,
@@ -21,6 +20,7 @@ import {
 } from './constants';
 import { createTimelineStyles } from './styles/timelineStyles';
 import { getTheme } from './theme';
+import { getCalendarDateString } from './utils/dateUtils';
 import {
   MultiResourceTimelineProps,
   MultiResourceTimelineRef,
@@ -298,7 +298,7 @@ const MultiResourceTimeline = forwardRef<MultiResourceTimelineRef, MultiResource
   // Filter events for date
   const filteredEvents = useMemo(() => 
     events.filter(event => 
-      CalendarUtils.getCalendarDateString(new Date(event.start)) === date
+      getCalendarDateString(new Date(event.start)) === date
     ), [events, date]
   );
 
