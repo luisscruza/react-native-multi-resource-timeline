@@ -1,6 +1,7 @@
 import { useCallback } from 'react';
 import { Gesture } from 'react-native-gesture-handler';
-import { runOnJS, useSharedValue } from 'react-native-reanimated';
+import { useSharedValue } from 'react-native-reanimated';
+import { scheduleOnRN } from 'react-native-worklets';
 import { ZOOM_LIMITS, PERFORMANCE } from '../constants';
 
 interface UseTimelineGesturesProps {
@@ -91,12 +92,12 @@ export const useTimelineGestures = ({
       if (pinchDirection.value === 'vertical' && shouldUpdate) {
         verticalScale.value = baseVerticalScale.value * event.scale;
         const newZoom = Math.max(ZOOM_LIMITS.vertical.min, Math.min(ZOOM_LIMITS.vertical.max, verticalScale.value));
-        runOnJS(handleLiveVerticalZoomChange)(newZoom);
+        scheduleOnRN(handleLiveVerticalZoomChange, newZoom);
         lastZoomUpdate.value = now;
       } else if (pinchDirection.value === 'horizontal' && !disableHorizontalZoom && shouldUpdate) {
         horizontalScale.value = baseHorizontalScale.value * event.scale;
         const newZoom = Math.max(ZOOM_LIMITS.horizontal.min, Math.min(ZOOM_LIMITS.horizontal.max, horizontalScale.value));
-        runOnJS(handleLiveHorizontalZoomChange)(newZoom);
+        scheduleOnRN(handleLiveHorizontalZoomChange, newZoom);
         lastZoomUpdate.value = now;
       }
     })
@@ -104,11 +105,11 @@ export const useTimelineGestures = ({
       'worklet';
       if (pinchDirection.value === 'vertical') {
         const newZoom = Math.max(ZOOM_LIMITS.vertical.min, Math.min(ZOOM_LIMITS.vertical.max, verticalScale.value));
-        runOnJS(handleVerticalZoomChange)(newZoom);
+        scheduleOnRN(handleVerticalZoomChange, newZoom);
         verticalScale.value = 1;
       } else if (pinchDirection.value === 'horizontal' && !disableHorizontalZoom) {
         const newZoom = Math.max(ZOOM_LIMITS.horizontal.min, Math.min(ZOOM_LIMITS.horizontal.max, horizontalScale.value));
-        runOnJS(handleHorizontalZoomChange)(newZoom);
+        scheduleOnRN(handleHorizontalZoomChange, newZoom);
         horizontalScale.value = 1;
       }
       
@@ -135,19 +136,19 @@ export const useTimelineGestures = ({
         const clampedSlotIndex = Math.max(0, Math.min(slotIndex, timeSlots.length - 1));
         const resource = resources[resourceIndex];
         
-        runOnJS(startDragSelection)(resource.id, clampedSlotIndex);
+        scheduleOnRN(startDragSelection, resource.id, clampedSlotIndex);
       })
       .onChange((event) => {
         'worklet';
         const slotIndex = Math.floor(event.y / slotHeight);
         const clampedSlotIndex = Math.max(0, Math.min(slotIndex, timeSlots.length - 1));
         
-        runOnJS(updateDragSelection)(clampedSlotIndex);
+        scheduleOnRN(updateDragSelection, clampedSlotIndex);
       })
       .onEnd(() => {
         'worklet';
         isDragActive.value = false;
-        runOnJS(completeDragSelection)();
+        scheduleOnRN(completeDragSelection);
       })
       .onFinalize(() => {
         'worklet';
@@ -170,7 +171,7 @@ export const useTimelineGestures = ({
         const clampedSlotIndex = Math.max(0, Math.min(slotIndex, timeSlots.length - 1));
         const resource = resources[resourceIndex];
         
-        runOnJS(onSingleTapSelection)(resource.id, clampedSlotIndex);
+        scheduleOnRN(onSingleTapSelection, resource.id, clampedSlotIndex);
       });
   }, [enableSingleTapSelection, onSingleTapSelection, slotHeight, timeSlots.length, resources]);
 

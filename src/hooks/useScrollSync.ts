@@ -1,7 +1,6 @@
 import { useCallback, useRef } from 'react';
 import { NativeScrollEvent, NativeSyntheticEvent, ScrollView } from 'react-native';
 import { useSharedValue, withTiming } from 'react-native-reanimated';
-import { PERFORMANCE } from '../constants';
 
 interface UseScrollSyncProps {
   currentColumnWidth: number;
