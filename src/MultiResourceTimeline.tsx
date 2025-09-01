@@ -4,7 +4,6 @@ import {
   GestureDetector,
   GestureHandlerRootView,
   ScrollView as GestureScrollView,
-  PinchGestureHandler,
 } from 'react-native-gesture-handler';
 import Animated, {
   Easing,
@@ -470,7 +469,7 @@ const MultiResourceTimeline = forwardRef<MultiResourceTimelineRef, MultiResource
         </View>
 
         {/* Timeline Content with Pinch Gesture */}
-        <PinchGestureHandler onGestureEvent={pinchHandler} shouldCancelWhenOutside={false}>
+        <GestureDetector gesture={pinchHandler}>
           <Animated.View style={styles.scrollContainer}>
             <GestureDetector gesture={scrollGesture}>
               <GestureScrollView 
@@ -557,7 +556,7 @@ const MultiResourceTimeline = forwardRef<MultiResourceTimelineRef, MultiResource
               </GestureScrollView>
             </GestureDetector>
           </Animated.View>
-        </PinchGestureHandler>
+        </GestureDetector>
       </GestureHandlerRootView>
     </TimelineErrorBoundary>
   );
