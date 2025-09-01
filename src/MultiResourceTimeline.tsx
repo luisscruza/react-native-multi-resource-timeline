@@ -1,4 +1,4 @@
-import React, { forwardRef, useEffect, useImperativeHandle, useMemo, useState } from 'react';
+import React, { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useState } from 'react';
 import { Dimensions, ScrollView, View } from 'react-native';
 import {
   GestureDetector,
@@ -57,6 +57,7 @@ const MultiResourceTimeline = forwardRef<MultiResourceTimelineRef, MultiResource
   showNowIndicator = false,
   format24h = true,
   timeSlotInterval = 60,
+  selectionGranularity,
   resourcesPerPage = 2,
   theme: themeProp = 'light',
   width = screenWidth,
@@ -109,10 +110,11 @@ const MultiResourceTimeline = forwardRef<MultiResourceTimelineRef, MultiResource
   } = useTimelineZoom(hourHeight, eventMinHeight, dynamicColumnWidth * 1.1);
 
   // Enhanced hooks
-  const { timeSlots, slotHeight, formatTimeSlot, getCurrentTimePosition } = useTimelineCalculations({
+  const { timeSlots, selectionSlots, slotHeight, selectionHeight, formatTimeSlot, getCurrentTimePosition } = useTimelineCalculations({
     startHour,
     endHour,
     timeSlotInterval,
+    selectionGranularity,
     hourHeight: currentHourHeight,
     date,
   });
@@ -161,10 +163,16 @@ const MultiResourceTimeline = forwardRef<MultiResourceTimelineRef, MultiResource
 
   const handleDragComplete = () => {
     mediumImpact();
-    completeDragSelection((resourceId, startSlot, endSlot) => {
-      successFeedback();
-      onTimeSlotSelect?.(resourceId, startSlot, endSlot);
-    });
+    completeDragSelection(
+      (resourceId, startSlot, endSlot) => {
+        successFeedback();
+        onTimeSlotSelect?.(resourceId, startSlot, endSlot);
+      },
+      selectionSlots,
+      timeSlotInterval,
+      startHour,
+      selectionGranularity
+    );
   };
 
   const handleSingleTapSelection = (resourceId: string, slotIndex: number) => {
@@ -183,7 +191,9 @@ const MultiResourceTimeline = forwardRef<MultiResourceTimelineRef, MultiResource
     isZooming,
   } = useTimelineGestures({
     slotHeight,
+    selectionHeight,
     timeSlots,
+    selectionSlots,
     resources,
     currentDragSelection,
     startDragSelection: handleDragStart,
@@ -198,6 +208,37 @@ const MultiResourceTimeline = forwardRef<MultiResourceTimelineRef, MultiResource
     onSingleTapSelection: handleSingleTapSelection,
   });
 
+  // Helper function to convert selection slot indices to consumer-compatible indices
+  const convertSelectionSlotsToTimeSlots = useCallback((startSlot: number, endSlot: number) => {
+    // Get the actual times from selection slots
+    const startTime = selectionSlots[startSlot];
+    const endTime = selectionSlots[endSlot];
+    
+    if (!startTime || !endTime) {
+      // Fallback to original indices if conversion fails
+      return { startSlot, endSlot };
+    }
+    
+    // Convert times to consumer-compatible indices (accounts for 30-minute hardcoded assumption)
+    const startTimeSlotIndex = timeToConsumerIndex(startTime.hours, startTime.minutes, startHour);
+    const endTimeSlotIndex = timeToConsumerIndex(endTime.hours, endTime.minutes, startHour);
+    
+    return {
+      startSlot: startTimeSlotIndex,
+      endSlot: endTimeSlotIndex,
+    };
+  }, [selectionSlots, startHour]);
+
+  // Helper function to convert time to consumer-compatible index
+  const timeToConsumerIndex = useCallback((hours: number, minutes: number, startHour: number) => {
+    const totalMinutes = hours * 60 + minutes;
+    const startMinutes = startHour * 60;
+    const offsetMinutes = totalMinutes - startMinutes;
+    
+    // Since consumer assumes each slot = 30 minutes, we divide by 30 to get the correct index
+    return Math.floor(offsetMinutes / 30);
+  }, []);
+
   // Keyboard navigation
   const {
     focusedResource,
@@ -207,10 +248,13 @@ const MultiResourceTimeline = forwardRef<MultiResourceTimelineRef, MultiResource
     clearSelection: clearKeyboardSelection,
   } = useKeyboardNavigation({
     resources,
-    timeSlots,
+    timeSlots: selectionSlots, // Use selection slots for keyboard navigation
     onTimeSlotSelect: (resourceId, startSlot, endSlot) => {
       successFeedback();
-      onTimeSlotSelect?.(resourceId, startSlot, endSlot);
+      
+      // Convert selection slot indices to time slot indices for consistent callback
+      const converted = convertSelectionSlotsToTimeSlots(startSlot, endSlot);
+      onTimeSlotSelect?.(resourceId, converted.startSlot, converted.endSlot);
     },
     onEventPress,
   });
@@ -517,6 +561,7 @@ const MultiResourceTimeline = forwardRef<MultiResourceTimelineRef, MultiResource
                           events={filteredEvents}
                           timeSlots={isVirtualScrollEnabled ? visibleTimeSlots.map(v => timeSlots[v.index]) : timeSlots}
                           slotHeight={slotHeight}
+                          selectionHeight={selectionHeight}
                           width={currentColumnWidth}
                           date={date}
                           startHour={startHour}

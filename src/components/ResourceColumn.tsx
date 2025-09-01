@@ -16,6 +16,7 @@ interface ResourceColumnProps {
   events: MultiResourceEvent[];
   timeSlots: TimeSlot[];
   slotHeight: number;
+  selectionHeight: number;
   width: number;
   date: string;
   startHour: number;
@@ -38,6 +39,7 @@ const ResourceColumnComponent: React.FC<ResourceColumnProps> = ({
   events,
   timeSlots,
   slotHeight,
+  selectionHeight,
   width,
   date,
   startHour,
@@ -200,6 +202,7 @@ const ResourceColumnComponent: React.FC<ResourceColumnProps> = ({
           <DragSelectionOverlay
             dragSelection={dragSelection}
             slotHeight={slotHeight}
+            selectionHeight={selectionHeight}
             width={width}
             theme={theme}
             resourceId={resource.id}
@@ -262,6 +265,7 @@ const arePropsEqual = (prevProps: ResourceColumnProps, nextProps: ResourceColumn
   // Check if layout props changed
   if (prevProps.width !== nextProps.width ||
       prevProps.slotHeight !== nextProps.slotHeight ||
+      prevProps.selectionHeight !== nextProps.selectionHeight ||
       prevProps.hourHeight !== nextProps.hourHeight ||
       prevProps.eventMinHeight !== nextProps.eventMinHeight) {
     return false;
