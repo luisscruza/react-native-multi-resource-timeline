@@ -5,6 +5,6 @@ module.exports = {
     ['@babel/preset-react', { runtime: 'automatic' }],
   ],
   plugins: [
-    'react-native-reanimated/plugin',
+    'react-native-worklets/plugin',
   ],
 };

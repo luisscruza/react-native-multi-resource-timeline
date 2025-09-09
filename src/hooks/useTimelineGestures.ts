@@ -1,6 +1,6 @@
 import { useCallback } from 'react';
-import { Gesture, PinchGestureHandlerGestureEvent } from 'react-native-gesture-handler';
-import { runOnJS, useAnimatedGestureHandler, useSharedValue } from 'react-native-reanimated';
+import { Gesture } from 'react-native-gesture-handler';
+import { runOnJS, useSharedValue } from 'react-native-reanimated';
 import { ZOOM_LIMITS, PERFORMANCE } from '../constants';
 
 interface UseTimelineGesturesProps {
@@ -55,8 +55,8 @@ export const useTimelineGestures = ({
   const scrollGesture = Gesture.Native().shouldCancelWhenOutside(false);
 
   // Optimized pinch gesture handler
-  const pinchHandler = useAnimatedGestureHandler<PinchGestureHandlerGestureEvent>({
-    onStart: (event) => {
+  const pinchHandler = Gesture.Pinch()
+    .onBegin((event) => {
       'worklet';
       baseVerticalScale.value = 1;
       baseHorizontalScale.value = 1;
@@ -64,8 +64,8 @@ export const useTimelineGestures = ({
       initialFocalY.value = event.focalY;
       pinchDirection.value = 'none';
       isZooming.value = 1;
-    },
-    onActive: (event) => {
+    })
+    .onUpdate((event) => {
       'worklet';
       
       const deltaX = Math.abs(event.focalX - initialFocalX.value);
@@ -100,8 +100,8 @@ export const useTimelineGestures = ({
         runOnJS(handleLiveHorizontalZoomChange)(newZoom);
         lastZoomUpdate.value = now;
       }
-    },
-    onEnd: () => {
+    })
+    .onEnd(() => {
       'worklet';
       if (pinchDirection.value === 'vertical') {
         const newZoom = Math.max(ZOOM_LIMITS.vertical.min, Math.min(ZOOM_LIMITS.vertical.max, verticalScale.value));
@@ -115,8 +115,7 @@ export const useTimelineGestures = ({
       
       isZooming.value = 0;
       pinchDirection.value = 'none';
-    },
-  });
+    });
 
   // Optimized drag gesture factory
   const createDragGesture = useCallback((resourceIndex: number) => {
