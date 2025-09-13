@@ -3,7 +3,6 @@ import { Dimensions, ScrollView, View } from 'react-native';
 import {
   GestureDetector,
   GestureHandlerRootView,
-  ScrollView as GestureScrollView,
 } from 'react-native-gesture-handler';
 import Animated, {
   Easing,
@@ -409,7 +408,7 @@ const MultiResourceTimeline = forwardRef<MultiResourceTimelineRef, MultiResource
 
   return (
     <TimelineErrorBoundary theme={theme} onError={onError}>
-      <GestureHandlerRootView style={styles.container}>
+      <GestureHandlerRootView style={[styles.container, { flex: 1 }]}>
         {/* Header Row */}
         <View style={styles.headerRow}>
           <View style={styles.timeHeaderSpace} />
@@ -472,7 +471,7 @@ const MultiResourceTimeline = forwardRef<MultiResourceTimelineRef, MultiResource
         <GestureDetector gesture={pinchHandler}>
           <Animated.View style={styles.scrollContainer}>
             <GestureDetector gesture={scrollGesture}>
-              <GestureScrollView 
+              <ScrollView 
                 style={{ flex: 1 }}
                 onScroll={isVirtualScrollEnabled ? handleVirtualScroll : undefined}
                 scrollEventThrottle={PERFORMANCE.scrollThrottle}
@@ -489,7 +488,7 @@ const MultiResourceTimeline = forwardRef<MultiResourceTimelineRef, MultiResource
                   />
                   
                   {/* Scrollable timeline columns */}
-                  <GestureScrollView 
+                  <ScrollView 
                     ref={contentScrollRef}
                     horizontal 
                     showsHorizontalScrollIndicator={false}
@@ -541,7 +540,7 @@ const MultiResourceTimeline = forwardRef<MultiResourceTimelineRef, MultiResource
                         <View style={{ width: offsetRight }} />
                       )}
                     </View>
-                  </GestureScrollView>
+                  </ScrollView>
                   
                   {/* Now indicator */}
                   {nowIndicatorPosition !== null && currentTimeString && (
@@ -553,7 +552,7 @@ const MultiResourceTimeline = forwardRef<MultiResourceTimelineRef, MultiResource
                     />
                   )}
                 </View>
-              </GestureScrollView>
+              </ScrollView>
             </GestureDetector>
           </Animated.View>
         </GestureDetector>

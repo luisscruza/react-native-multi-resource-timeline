@@ -52,8 +52,8 @@ export const useTimelineGestures = ({
   const isZooming = useSharedValue(0);
   const isDragActive = useSharedValue(false);
 
-  // Create scroll gesture that gets disabled during drag
-  const scrollGesture = Gesture.Native().shouldCancelWhenOutside(false);
+  // Create scroll gesture that gets disabled during drag - simplified approach
+  const scrollGesture = Gesture.Pan().shouldCancelWhenOutside(false);
 
   // Optimized pinch gesture handler
   const pinchHandler = Gesture.Pinch()
