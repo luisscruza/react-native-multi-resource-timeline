@@ -174,7 +174,6 @@ const MultiResourceTimeline = forwardRef<MultiResourceTimelineRef, MultiResource
 
   const {
     pinchHandler,
-    scrollGesture,
     createDragGesture,
     createTapGesture,
     createCombinedGesture,
@@ -470,12 +469,11 @@ const MultiResourceTimeline = forwardRef<MultiResourceTimelineRef, MultiResource
         {/* Timeline Content with Pinch Gesture */}
         <GestureDetector gesture={pinchHandler}>
           <Animated.View style={styles.scrollContainer}>
-            <GestureDetector gesture={scrollGesture}>
-              <ScrollView 
-                style={{ flex: 1 }}
-                onScroll={isVirtualScrollEnabled ? handleVirtualScroll : undefined}
-                scrollEventThrottle={PERFORMANCE.scrollThrottle}
-              >
+            <ScrollView 
+              style={{ flex: 1 }}
+              onScroll={isVirtualScrollEnabled ? handleVirtualScroll : undefined}
+              scrollEventThrottle={PERFORMANCE.scrollThrottle}
+            >
                 <View style={styles.timelineContainer}>
                   {/* Time column */}
                   <TimeColumn
@@ -553,7 +551,6 @@ const MultiResourceTimeline = forwardRef<MultiResourceTimelineRef, MultiResource
                   )}
                 </View>
               </ScrollView>
-            </GestureDetector>
           </Animated.View>
         </GestureDetector>
       </GestureHandlerRootView>

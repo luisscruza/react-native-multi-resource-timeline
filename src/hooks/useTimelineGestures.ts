@@ -52,9 +52,6 @@ export const useTimelineGestures = ({
   const isZooming = useSharedValue(0);
   const isDragActive = useSharedValue(false);
 
-  // Create scroll gesture that gets disabled during drag - simplified approach
-  const scrollGesture = Gesture.Pan().shouldCancelWhenOutside(false);
-
   // Optimized pinch gesture handler
   const pinchHandler = Gesture.Pinch()
     .onBegin((event) => {
@@ -154,9 +151,8 @@ export const useTimelineGestures = ({
       .onFinalize(() => {
         'worklet';
         isDragActive.value = false;
-      })
-      .blocksExternalGesture(scrollGesture);
-  }, [slotHeight, timeSlots.length, resources, startDragSelection, updateDragSelection, completeDragSelection, scrollGesture]);
+      });
+  }, [slotHeight, timeSlots.length, resources, startDragSelection, updateDragSelection, completeDragSelection]);
 
   // Single tap gesture factory for immediate selection
   const createTapGesture = useCallback((resourceIndex: number) => {
@@ -190,7 +186,6 @@ export const useTimelineGestures = ({
 
   return {
     pinchHandler,
-    scrollGesture,
     createDragGesture,
     createTapGesture,
     createCombinedGesture,
